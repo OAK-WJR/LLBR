@@ -1,0 +1,18 @@
+Diagram Explanation
+
+Graphical Explanation:
+
+.Rectangle: module
+.RoundedRectangle: variables/database
+.Diamond: judge(Button)
+	M: picture input mode
+	A: add new picture
+	P: going to process mode
+	R: going to Reading mode
+	S: start the process behind
+
+.Hollow-TriangularArrow: running direction
+.Solid-TriangularArrow: running direction + assignment
+.Hollow-CircularArrow: detailed content directions
+.Solid-CircularArrow: running direction + judge of start-running-switch
+.Hollow-DiamondArrow: assignment direction + searched information (from the start of the arrow) apply
