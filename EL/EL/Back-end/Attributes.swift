@@ -17,19 +17,37 @@ struct Quadrilateral {
     var bottomLeft: CGPoint
 }
 
+//Part-of-speech type
+enum POSType {
+  case noun
+  case verb
+  case adjective
+  case adverb
+  case pronoun
+  case preposition
+  case conjunction
+  case interjection
+  case determiner
+}
+
 // MARK: - Book Structures
 
-//Text info for the content of one page
-struct PageContentText {
-    var contents: [[[String]]]
-}
-//Position info for the content of one page
-struct PageContentPosition {
-    var contents: [[[Any]]]
+struct Pointer {
+  var phrasePointer: [Range<Int>]
+  var sentencePointer: [Range<Int>]
 }
 
 //Content info for one page
 struct PageContent {
-  var text: PageContentText
-  var postions: PageContentPosition
+  var texts: [String]
+  var postions: [Any]
+  var pointer: Pointer
+}
+
+// MARK: - LearedWords Structure
+
+
+struct Word {
+  var texts: String
+  var pos: POSType
 }

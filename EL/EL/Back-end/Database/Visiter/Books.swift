@@ -12,9 +12,9 @@ import CoreGraphics
 
 // Enum that tells the operation types apart
 enum ElementType {
-    case original
-    case crop
-    case content
+  case original
+  case crop
+  case content
 }
 
 // Database manager class
@@ -77,32 +77,33 @@ class BooksDatabase {
 
   // 1.1 Create a new table
   func createTable(named tableName: String) {
-      // Execute the SQL statement to create a new table
-      let createTableString = """
-      CREATE TABLE \(tableName) (
-        Page INTEGER PRIMARY KEY,
-        Type TEXT,
-        Original BLOB,
-        Crop BLOB,
-        Words TEXT,
-        Positions BLOB
-      );
-      """
-      // Run the SQL to create the table here
+    // Execute the SQL statement to create a new table
+    let createTableString = """
+    CREATE TABLE \(tableName) (
+      Page INTEGER PRIMARY KEY,
+      Type TEXT,
+      Original BLOB,
+      Crop BLOB,
+      Words TEXT,
+      Positions TEXT
+      Pointer TEXT
+    );
+    """
+    // Run the SQL to create the table here
   }
 
   // 1.2 Rename a table
   func changeTableName(from oldName: String, to newName: String) {
-      // Execute the SQL statement to rename a table
-      let renameTableString = "ALTER TABLE \(oldName) RENAME TO \(newName);"
-      // Run the SQL to rename the table here
+    // Execute the SQL statement to rename a table
+    let renameTableString = "ALTER TABLE \(oldName) RENAME TO \(newName);"
+    // Run the SQL to rename the table here
   }
 
   // 1.3 Delete a table
   func deleteTable(named tableName: String) {
-      // Execute the SQL statement to delete a table
-      let deleteTableString = "DROP TABLE IF EXISTS \(tableName);"
-      // Run the SQL to delete the table here
+    // Execute the SQL statement to delete a table
+    let deleteTableString = "DROP TABLE IF EXISTS \(tableName);"
+    // Run the SQL to delete the table here
   }
 
   // MARK: - Helper functions - Original data operations
@@ -121,62 +122,62 @@ class BooksDatabase {
 
   // 2.3 Delete Type and Original content
   public func deleteOriginal(at index: Int, from tableName: String) {
-      // Run the SQL to delete content here
+    // Run the SQL to delete content here
   }
 
   // 2.4 Read Type and Original content
   public func getOriginal(at index: Int, from tableName: String) -> (type: String?, original: Any?) {
-      // Run the SQL to query content here and parse it by Type
-      // Return Type and the parsed Original
-      return (nil, nil)
+    // Run the SQL to query content here and parse it by Type
+    // Return Type and the parsed Original
+    return (nil, nil)
   }
 
   // MARK: - Helper functions - Crop operations
 
   // 3.1 Add crop content
   public func addCrop(at index: Int, crop: Any, to tableName: String) {
-      // Run the SQL to insert crop content here
+    // Run the SQL to insert crop content here
   }
 
   // 3.2 Update crop content
   public func changeCrop(at index: Int, newCrop: Any, in tableName: String) {
-      // Run the SQL to update crop content here
+    // Run the SQL to update crop content here
   }
 
   // 3.3 Delete crop content
   public func deleteCrop(at index: Int, from tableName: String) {
-      // Run the SQL to delete crop content here
+    // Run the SQL to delete crop content here
   }
 
   // 3.4 Read crop content
   public func getCrop(at index: Int, from tableName: String) -> Any? {
-      // Run the SQL to query crop content here and parse it by Type
-      // Return the parsed crop
-      return nil
+    // Run the SQL to query crop content here and parse it by Type
+    // Return the parsed crop
+    return nil
   }
 
-  // MARK: - Helper functions - Words and Positions operations
+  // MARK: - Helper functions - Words, Positions and Pointer operations
 
   // 4.1 Add Words and Positions content
   public func addContent(at index: Int, content: PageContent, to tableName: String) {
-      // Run the SQL to insert words and positions content here
+    // Run the SQL to insert words and positions content here
   }
 
   // 4.2 Update Words and Positions content
   public func changeContent(at index: Int, newContent: PageContent, in tableName: String) {
-      // Run the SQL to update words and positions content here
+    // Run the SQL to update words and positions content here
   }
 
   // 4.3 Delete Words and Positions content
   public func deleteContent(at index: Int, from tableName: String) {
-      // Run the SQL to delete words and positions content here
+    // Run the SQL to delete words and positions content here
   }
 
   // 4.4 Read Words and Positions content
-  public func getContent(at indexu: Int, from tableName: String) -> (words: [[[String]]]?, positions: Any?) {
-      // Run the SQL to query words and positions content here and parse it by Type
-      // Return the parsed words and positions
-      return (nil, nil)
+  public func getContent(at indexu: Int, from tableName: String) -> PageContent? {
+    // Run the SQL to query words and positions content here and parse it by Type
+    // Return the parsed words and positions
+    return nil
   }
 
   // Close the database connection

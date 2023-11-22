@@ -12,23 +12,23 @@ import UIKit
 class TextSplitter {
     
   // Process the text and WordBox; return PageText and PagePosition
-  func process(words: [String], postions: [Any]) -> PageContent {
+  func process(words: [String], postions: [Any]) -> Pointer {
     // Find the phrase boundaries
-    var (phraseTexts, phrasePostions) = self.splitIntoPhrases(wordTexts: words, wordPostions: postions)
-    let (sentenceTexts, sentencePostions) = self.splitIntoSentences(phraseTexts: phraseTexts, phrasePostions: phrasePostions)
+    var phrasePointer = self.splitIntoPhrases(wordTexts: words, wordPostions: postions)
+    let sentencePointer = self.splitIntoSentences(phraseTexts: words, phrasePostions: postions)
     
-    // Create the PageText and PagePosition structs
-    let pageText = PageContentText(contents: sentenceTexts)
-    let pagePosition = PageContentPosition(contents: sentencePostions)
-    
-    return PageContent(text: pageText, postions: pagePosition)
+    return Pointer(phrasePointer: phrasePointer, sentencePointer: sentencePointer)
   }
   
-  private func splitIntoPhrases(wordTexts: [String], wordPostions: [Any]) -> ([[String]], [[Any]]) {
-    // Add code here to split words into phrases
+  private func splitIntoPhrases(wordTexts: [String], wordPostions: [Any]) -> [Range<Int>] {
+    // Add code here to combine words into phrases
+    //Ex: ["Can","you","pick","up","my","bagpack?","Yes,","I","can."]
+    //  ->[2..<4]
   }
   
-  private func splitIntoSentences(phraseTexts: [[String]], phrasePostions: [[Any]]) -> ([[[String]]], [[[Any]]]) {
-    // Add code here to group phrases into sentences
+  private func splitIntoSentences(phraseTexts: [String], phrasePostions: [Any]) -> [Range<Int>] {
+    // Add code here to create a pointer to each sentence range
+    //Ex: ["Can","you","pick up","my","bagpack?","Yes,","I","will."]
+    //  ->[0..<5,5..<8]
   }
 }
