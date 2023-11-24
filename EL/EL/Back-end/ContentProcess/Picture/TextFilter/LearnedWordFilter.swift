@@ -8,7 +8,8 @@
 import Foundation
 
 class LearnedWordFilter {
-  func filter(from words: Word) -> [Word] {
+  func filter(from words: [Word?]) -> [Word?] {
     //Filter words with LearedWordsDatabase.filter and return the result
+    return [nil]
   }
 }

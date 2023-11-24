@@ -33,8 +33,8 @@ enum POSType {
 // MARK: - Book Structures
 
 struct Pointer {
-  var phrasePointer: [Range<Int>]
-  var sentencePointer: [Range<Int>]
+  var phrasePointer: [Range<Int>?]
+  var sentencePointer: [Range<Int>?]
 }
 
 //Content info for one page

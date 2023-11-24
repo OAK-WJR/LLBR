@@ -18,19 +18,19 @@ class UniformFormat {
         if let inputImage = content as? UIImage {
           let (words, quadrilaterals) = ocr.processImage(inputImage: inputImage)
           let pointer = textProcessor.process(words: words, postions: quadrilaterals)
-          return PageContent(texts: words, postions: quadrilaterals, pointer: pointer)
+          return PageContent(texts: words, postions: quadrilaterals, pointer: pointer!)
           
         } else if let inputAudio = content as? URL {
           let (words, timeRanges) = ocr.processAudio(inputAudio: inputAudio)
           let pointer = textProcessor.process(words: words, postions: timeRanges)
-          return PageContent(texts: words, postions: timeRanges, pointer: pointer)
+          return PageContent(texts: words, postions: timeRanges, pointer: pointer!)
           
         } else if let inputText = content as? String {
           let words = ocr.processText(inputText: inputText)
           // Plain text may have no position info, so create placeholder Postions
           let none = createWordPositionsForText(words: words)
           let pointer = textProcessor.process(words: words, postions: none)
-          return PageContent(texts: words, postions: none, pointer: pointer)
+          return PageContent(texts: words, postions: none, pointer: pointer!)
           
         } else {
             // Unknown content type
