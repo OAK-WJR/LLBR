@@ -114,7 +114,6 @@
 			children = (
 				347D07A22B0F0DA3007CA826 /* Info.plist */,
 				3414C6B32AFDA35A0085ABAB /* Front-end */,
-				347D07B32B1163AF007CA826 /* UIs */,
 				3414C6B42AFDA36C0085ABAB /* Back-end */,
 				3414C6A52AFDA3180085ABAB /* ELApp.swift */,
 				3414C6A72AFDA3180085ABAB /* ContentView.swift */,
@@ -138,6 +137,7 @@
 				347D07A82B116374007CA826 /* Components */,
 				347D079B2B0EDF96007CA826 /* UserGuide */,
 				3414C6C32AFDA5890085ABAB /* Reading */,
+				347D07B32B1163AF007CA826 /* UIs */,
 			);
 			path = "Front-end";
 			sourceTree = "<group>";

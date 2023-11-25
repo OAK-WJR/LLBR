@@ -9,13 +9,14 @@ import SwiftUI
 import AVFoundation
 import UIKit
 
-let screen = UIScreen.main.bounds
-struct OriginalPhotosView: View {
+struct CameraView: View {
   @State private var image: UIImage?
-  @State var tableName: String = "diary"
-  @State var pageNow: Any? = nil
+  @Binding var bookName: String
   
   @State var photoRatio: CGFloat = 16/9
+  
+  @State var startPoint: CGPoint?
+  @State var direction: Direction = .none
 
   var body: some View {
     VStack {
@@ -23,22 +24,31 @@ struct OriginalPhotosView: View {
         Image(uiImage: image)
           .resizable()
           .aspectRatio(contentMode: .fit)
-          .edgesIgnoringSafeArea(.all)
-          .onAppear {
-            BooksDatabase().addOperation(image, in: tableName) { page in
-              pageNow = page
-              print(pageNow ?? "-1")
-            }
+          .onTapGesture(count: 2) {
+            self.image = nil
           }
-
+          .simultaneousGesture(DragGesture()
+            .onChanged({ges in
+              if startPoint == nil {
+                startPoint = ges.location
+              }
+            })
+            .onEnded({ ges in
+              direction = handle(ges.location, startPoint!)
+              if direction == .left {
+                BooksDatabase().addOperation(image, in: bookName){index in print(index)}
+                self.image = nil
+              }
+              startPoint = nil
+              direction = .none
+            })
+          )
       } else {
-        CustomCameraView(image: $image, width: screen.width, height: screen.width * photoRatio)
-          .edgesIgnoringSafeArea(.all)
-          .frame(height: screen.width * photoRatio)
-          .border(.green)
+        CustomCameraView(image: $image, width: InterfaceData.screen.width,
+                                        height: InterfaceData.screen.width * InterfaceData.photoScale)
       }
     }
-    .border(.blue)
+    .frame(height: InterfaceData.screen.width * InterfaceData.photoScale)
   }
 }
 
@@ -124,9 +134,6 @@ class CustomCameraViewController: UIViewController {
   func setupPreviewLayer(session: AVCaptureSession) {
     previewLayer = AVCaptureVideoPreviewLayer(session: session)
     previewLayer?.videoGravity = .resizeAspect // keep the aspect ratio
-    let bounds = view.layer.bounds
-    let width = bounds.width
-    let height = width * 16 / 9 // 16:9 aspect ratio
     previewLayer?.frame = CGRect(x: 0, y: 0, width: width, height: height)
     view.layer.addSublayer(previewLayer!)
   }
@@ -148,5 +155,32 @@ extension CustomCameraViewController: AVCapturePhotoCaptureDelegate {
     guard let imageData = photo.fileDataRepresentation() else { return }
     let image = UIImage(data: imageData)
     delegate?.didTakePhoto(image)
+  }
+}
+
+
+//MARK: - UI interaction
+
+func handle(_ nowPos: CGPoint, _ startPos: CGPoint) -> Direction {
+  let dx = abs(nowPos.x - startPos.x)
+  let dy = abs(nowPos.y - startPos.y)
+  
+  if startPos.y < nowPos.y && dy > dx {
+    //Down
+    return .down
+  }
+  else if startPos.y > nowPos.y && dy > dx {
+    //up
+    return .up
+  }
+  else if startPos.x < nowPos.x && dx > dy {
+    //right
+    return .right
+  }
+  else if startPos.x > nowPos.x && dx > dy {
+    //left
+    return .left
+  } else {
+    return .none
   }
 }

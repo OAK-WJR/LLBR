@@ -25,8 +25,11 @@ class BooksDatabase {
   // Initialize the database connection
   init() {
     openDatabase()
-    createDiaryTableIfNeeded()
-    listAllTables()
+    allTables() { tables in
+      if tables.contains("diary") {
+        self.createDiaryTableIfNeeded()
+      }
+    }
   }
 
   
@@ -47,7 +50,8 @@ class BooksDatabase {
   func createDiaryTableIfNeeded() {
     let createTableString = """
     CREATE TABLE IF NOT EXISTS diary(
-    EntryDate DATETIME PRIMARY KEY,
+    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    EntryDate DATETIME,
     Type TEXT,
     Original TEXT,
     Crop TEXT,
@@ -58,9 +62,7 @@ class BooksDatabase {
 
     var createTableStatement: OpaquePointer?
     if sqlite3_prepare_v2(db, createTableString, -1, &createTableStatement, nil) == SQLITE_OK {
-      if sqlite3_step(createTableStatement) == SQLITE_DONE {
-        print("Diary table created.")
-      } else {
+      if sqlite3_step(createTableStatement) != SQLITE_DONE {
         print("Diary table could not be created.")
       }
     } else {
@@ -68,26 +70,9 @@ class BooksDatabase {
     }
     sqlite3_finalize(createTableStatement)
   }
-  
-  func listAllTables() {
-    let queryString = "SELECT name FROM sqlite_master WHERE type='table';"
-    var statement: OpaquePointer?
-    
-    if sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK {
-      while sqlite3_step(statement) == SQLITE_ROW {
-        let tableName = String(cString: sqlite3_column_text(statement, 0))
-        print("Table name: \(tableName)")
-      }
-      sqlite3_finalize(statement)
-    } else {
-      if let error = String(cString: sqlite3_errmsg(db), encoding: .utf8) {
-        print("Error preparing select: \(error)")
-      }
-    }
-  }
 
   // MARK: - Top-level functions - General operations
-  func addOperation(_ data: Any, in tableName: String, completion: @escaping (Any?) -> Void) {
+  func addOperation(_ data: Any, in tableName: String, completion: @escaping (sqlite3_int64) -> Void) {
     completion(addOriginal(original: data, to: tableName))
   }
   
@@ -131,7 +116,7 @@ class BooksDatabase {
     // Execute the SQL statement to create a new table
     let createTableString = """
     CREATE TABLE \(tableName) (
-      Page INTEGER PRIMARY KEY,
+      ID INTEGER PRIMARY KEY,
       Type TEXT,
       Original BLOB,
       Crop BLOB,
@@ -144,9 +129,9 @@ class BooksDatabase {
   }
 
   // 1.2 Rename a table
-  func changeTableName(from oldName: String, to newName: String) {
+  func changeTableName(from oldTableName: String, to newTableName: String) {
     // Execute the SQL statement to rename a table
-    let renameTableString = "ALTER TABLE \(oldName) RENAME TO \(newName);"
+    let renameTableString = "ALTER TABLE \(oldTableName) RENAME TO \(newTableName);"
     // Run the SQL to rename the table here
   }
 
@@ -156,45 +141,79 @@ class BooksDatabase {
     let deleteTableString = "DROP TABLE IF EXISTS \(tableName);"
     // Run the SQL to delete the table here
   }
+  
+  // 1.4 List table names
+  func allTables(completion: @escaping ([String]) -> Void) {
+    let queryString = "SELECT name FROM sqlite_master WHERE type='table';"
+    var statement: OpaquePointer?
+    var tables = [String]()
+    
+    if sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK {
+      while sqlite3_step(statement) == SQLITE_ROW {
+        let tableName = String(cString: sqlite3_column_text(statement, 0))
+        tables.append(tableName)
+      }
+      sqlite3_finalize(statement)
+    } else {
+      if let error = String(cString: sqlite3_errmsg(db), encoding: .utf8) {
+        print("Error preparing select: \(error)")
+      }
+    }
+    completion(tables)
+  }
+  
+  // 1.5 List all indexes
+  func allIndex(from tableName: String) -> [Any] {
+    var indexes = [String]()
+    let queryString = "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ?;"
+
+    var queryStatement: OpaquePointer?
+    if sqlite3_prepare_v2(db, queryString, -1, &queryStatement, nil) == SQLITE_OK {
+      sqlite3_bind_text(queryStatement, 1, (tableName.lowercased() as NSString).utf8String, -1, nil)
+
+      while sqlite3_step(queryStatement) == SQLITE_ROW {
+        if let queryResultCol1 = sqlite3_column_text(queryStatement, 0) {
+          let name = String(cString: queryResultCol1)
+          indexes.append(name)
+        }
+      }
+    } else {
+      print("SELECT statement could not be prepared")
+    }
+
+    sqlite3_finalize(queryStatement)
+
+    return indexes
+  }
 
   // MARK: - Helper functions - Original data operations
 
   // 2.1 Add Type and Original content
-  public func addOriginal(original: Any, to tableName: String) -> Any? {
+  public func addOriginal(original: Any, to tableName: String) -> sqlite3_int64 {
     let type = getType(of: original)
     let originalData = processData(type: type, for: original)
     let queryString: String
     
-    var returnValue: Any?
     
     if tableName.lowercased() == "diary" {
-      queryString = "INSERT INTO \(tableName) (EntryDate, Type, Original) VALUES (?, ?, ?);"
+      queryString = "INSERT INTO \(tableName) (EntryDate, Type, Original) VALUES (datetime('now', 'localtime'), ?, ?);"
     } else {
-      queryString = "INSERT INTO \(tableName) (Page, Type, Original) VALUES (?, ?, ?);"
+      queryString = "INSERT INTO \(tableName) (Type, Original) VALUES (?, ?);"
     }
     
     var statement: OpaquePointer?
     
     if sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK {
       if tableName.lowercased() == "diary" {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-        
-        let currentDateTime = dateFormatter.string(from: Date())
-        
-        sqlite3_bind_text(statement, 1, currentDateTime, -1, nil)
+
         sqlite3_bind_text(statement, 2, (type as NSString).utf8String, -1, nil)
         sqlite3_bind_blob(statement, 3, (originalData! as NSData).bytes, Int32(originalData!.count), nil)
 
-        returnValue = currentDateTime
       } else {
-        let index = queryNextIndex(for: tableName)
         
-        sqlite3_bind_int(statement, 1, Int32(index))
-        sqlite3_bind_text(statement, 2, (type as NSString).utf8String, -1, nil)
-        sqlite3_bind_blob(statement, 3, (originalData! as NSData).bytes, Int32(originalData!.count), nil)
+        sqlite3_bind_text(statement, 1, (type as NSString).utf8String, -1, nil)
+        sqlite3_bind_blob(statement, 2, (originalData! as NSData).bytes, Int32(originalData!.count), nil)
         
-        returnValue = index
       }
       
       if sqlite3_step(statement) == SQLITE_DONE {
@@ -202,6 +221,8 @@ class BooksDatabase {
       } else {
         let errmsg = String(cString: sqlite3_errmsg(db))
         print("Could not insert row. Error: \(errmsg)")
+        let index = allIndex(from: "diary")
+        print("Indexs: \(String(describing: index))")
       }
       
       sqlite3_finalize(statement)
@@ -212,34 +233,17 @@ class BooksDatabase {
       }
     }
     
-    return returnValue ?? nil
-    
     func processData(type: String, for value: Any) -> Data? {
-       switch type {
-       case "UIImage":
-         return (value as! UIImage).jpegData(compressionQuality: 1)
-       // Add more cases for each type you want to handle
-       default:
-         return nil
-       }
-     }
-    
-    func queryNextIndex(for tableName: String) -> Int {
-      let queryString = "SELECT Page FROM \(tableName) ORDER BY Page DESC LIMIT 1;"
-      var statement: OpaquePointer?
-      var lastIndex: Int = 0
-      
-      if sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK {
-        if sqlite3_step(statement) == SQLITE_ROW {
-          lastIndex = Int(sqlite3_column_int(statement, 0))
-        }
-        sqlite3_finalize(statement)
-      } else {
-        print("SELECT statement could not be prepared. Error: \(String(describing: sqlite3_errmsg(db)))")
+      switch type {
+      case "UIImage":
+        return (value as! UIImage).jpegData(compressionQuality: 1)
+      // Add more cases for each type you want to handle
+      default:
+        return nil
       }
-      
-      return lastIndex + 1
     }
+    
+    return sqlite3_last_insert_rowid(db)
   }
 
   // 2.2 Update Type and Original content
