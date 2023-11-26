@@ -12,7 +12,7 @@ class OriginalProcessing {
   
   class Photo {
     
-    static func processImage(image: UIImage) -> UIImage? {
+    func zipImage(image: UIImage) -> UIImage? {
       let resizedImage = resizeImage(image: image, maxDimension: 1080)
       let compressedImageData = compressImage(image: resizedImage)
       
@@ -22,7 +22,24 @@ class OriginalProcessing {
       return UIImage(data: compressedImageData!) ?? nil
     }
     
-    private static func resizeImage(image: UIImage, maxDimension: CGFloat) -> UIImage {
+    func createThumbnail(images: [UIImage], targetSize: CGSize) -> [UIImage]? {
+      return images.compactMap { originalImage in
+        
+        UIGraphicsBeginImageContextWithOptions(targetSize, false, 0.0)
+        defer { UIGraphicsEndImageContext() }
+
+        let aspectWidth = targetSize.width / originalImage.size.width
+        let aspectHeight = targetSize.height / originalImage.size.height
+        let aspectRatio = min(aspectWidth, aspectHeight)
+
+        originalImage.draw(in: CGRect(x: 0.0, y: 0.0, width: originalImage.size.width * aspectRatio, height: originalImage.size.height * aspectRatio))
+
+        return UIGraphicsGetImageFromCurrentImageContext()
+      }
+    }
+
+    
+    private func resizeImage(image: UIImage, maxDimension: CGFloat) -> UIImage {
       let size = image.size
       
       var ratio: CGFloat = 1.0
@@ -45,7 +62,7 @@ class OriginalProcessing {
       return newImage ?? image
     }
     
-    private static func compressImage(image: UIImage) -> Data? {
+    private func compressImage(image: UIImage) -> Data? {
       return image.jpegData(compressionQuality: 0.7)
     }
     

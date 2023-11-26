@@ -10,10 +10,12 @@ import AVFoundation
 import UIKit
 
 struct CameraView: View {
+  @State var screen = UIScreen.main.bounds
+  
   @State private var image: UIImage?
   @Binding var bookName: String
-  
-  @State var photoRatio: CGFloat = 16/9
+  @Binding var index: Int
+  @Binding var ids: [Int]
   
   @State var startPoint: CGPoint?
   @State var direction: Direction = .none
@@ -27,7 +29,8 @@ struct CameraView: View {
           .onTapGesture(count: 2) {
             self.image = nil
           }
-          .simultaneousGesture(DragGesture()
+          .simultaneousGesture(
+            DragGesture()
             .onChanged({ges in
               if startPoint == nil {
                 startPoint = ges.location
@@ -36,7 +39,12 @@ struct CameraView: View {
             .onEnded({ ges in
               direction = handle(ges.location, startPoint!)
               if direction == .left {
-                BooksDatabase().addOperation(image, in: bookName){index in print(index)}
+                BooksDatabase().addOperation(image, in: bookName){ id in
+                  DispatchQueue.global(qos: .userInitiated).async {
+                    print("ID: \(id)")
+                    ids = BooksDatabase().getAllIds(from: bookName)
+                  }
+                }
                 self.image = nil
               }
               startPoint = nil
@@ -44,11 +52,19 @@ struct CameraView: View {
             })
           )
       } else {
-        CustomCameraView(image: $image, width: InterfaceData.screen.width,
-                                        height: InterfaceData.screen.width * InterfaceData.photoScale)
+        CustomCameraView(image: $image, width: screen.width,
+                                        height: screen.height)
+        .ignoresSafeArea(.all)
+        .overlay(
+            VStack {
+              Spacer()
+              Rectangle()
+                .fill(Color.white)
+                .frame(height: 1)
+            }
+        )
       }
     }
-    .frame(height: InterfaceData.screen.width * InterfaceData.photoScale)
   }
 }
 
@@ -82,7 +98,7 @@ struct CustomCameraView: UIViewControllerRepresentable {
     }
 
     func didTakePhoto(_ image: UIImage?) {
-      let zipedImage = OriginalProcessing.Photo.processImage(image: image!)
+      let zipedImage = OriginalProcessing.Photo().zipImage(image: image!)
       parent.image = zipedImage
       parent.presentationMode.wrappedValue.dismiss()
     }
@@ -133,7 +149,7 @@ class CustomCameraViewController: UIViewController {
 
   func setupPreviewLayer(session: AVCaptureSession) {
     previewLayer = AVCaptureVideoPreviewLayer(session: session)
-    previewLayer?.videoGravity = .resizeAspect // keep the aspect ratio
+    previewLayer?.videoGravity = .resizeAspectFill
     previewLayer?.frame = CGRect(x: 0, y: 0, width: width, height: height)
     view.layer.addSublayer(previewLayer!)
   }

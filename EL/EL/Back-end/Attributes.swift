@@ -40,7 +40,6 @@ enum Direction {
 }
 
 struct InterfaceData {
-  static let screen = UIScreen.main.bounds
   static let photoScale: CGFloat = 16/9
   
   static let sidebarScaleH: CGFloat = 10/100
@@ -59,6 +58,16 @@ struct PageContent {
   var texts: [String]
   var postions: [Any]
   var pointer: Pointer
+}
+
+struct Page {
+  var ID: Int?
+  var date: Date?
+  var type: String?
+  var original: Any?
+  var crop: [[CGFloat]]?
+  var content: PageContent?
+  
 }
 
 // MARK: - LearedWords Structure

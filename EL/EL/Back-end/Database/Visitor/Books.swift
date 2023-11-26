@@ -25,8 +25,9 @@ class BooksDatabase {
   // Initialize the database connection
   init() {
     openDatabase()
-    allTables() { tables in
-      if tables.contains("diary") {
+    getAllTablesName() { tables in
+      if !tables.contains("diary") {
+        print("Need to create 'diary' database")
         self.createDiaryTableIfNeeded()
       }
     }
@@ -98,7 +99,7 @@ class BooksDatabase {
     }
   }
   
-  func getOperation(_ elementType: ElementType, at index: Int, from tableName: String) -> Any? {
+  func getOperation(_ elementType: ElementType, at index: [Int], from tableName: String) -> Any? {
     switch elementType {
     case .original:
       return getOriginal(at: index, from: tableName)
@@ -143,7 +144,7 @@ class BooksDatabase {
   }
   
   // 1.4 List table names
-  func allTables(completion: @escaping ([String]) -> Void) {
+  func getAllTablesName(completion: @escaping ([String]) -> Void) {
     let queryString = "SELECT name FROM sqlite_master WHERE type='table';"
     var statement: OpaquePointer?
     var tables = [String]()
@@ -163,27 +164,24 @@ class BooksDatabase {
   }
   
   // 1.5 List all indexes
-  func allIndex(from tableName: String) -> [Any] {
-    var indexes = [String]()
-    let queryString = "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ?;"
+  func getAllIds(from tableName: String) -> [Int] {
+    var ids = [Int]()
+    let queryString = "SELECT ID FROM \(tableName);"
 
     var queryStatement: OpaquePointer?
     if sqlite3_prepare_v2(db, queryString, -1, &queryStatement, nil) == SQLITE_OK {
-      sqlite3_bind_text(queryStatement, 1, (tableName.lowercased() as NSString).utf8String, -1, nil)
-
       while sqlite3_step(queryStatement) == SQLITE_ROW {
-        if let queryResultCol1 = sqlite3_column_text(queryStatement, 0) {
-          let name = String(cString: queryResultCol1)
-          indexes.append(name)
-        }
+        let id = sqlite3_column_int(queryStatement, 0)
+        ids.append(Int(id))
       }
     } else {
-      print("SELECT statement could not be prepared")
+      if let error = String(cString: sqlite3_errmsg(db), encoding: .utf8) {
+        print("Error preparing select: \(error)")
+      }
     }
-
     sqlite3_finalize(queryStatement)
 
-    return indexes
+    return ids
   }
 
   // MARK: - Helper functions - Original data operations
@@ -191,46 +189,37 @@ class BooksDatabase {
   // 2.1 Add Type and Original content
   public func addOriginal(original: Any, to tableName: String) -> sqlite3_int64 {
     let type = getType(of: original)
-    let originalData = processData(type: type, for: original)
+    guard let originalData = processData(type: type, for: original) else {
+        print("Failed to process original data")
+        return -1
+    }
     let queryString: String
-    
-    
     if tableName.lowercased() == "diary" {
-      queryString = "INSERT INTO \(tableName) (EntryDate, Type, Original) VALUES (datetime('now', 'localtime'), ?, ?);"
+        queryString = "INSERT INTO \(tableName) (EntryDate, Type, Original) VALUES (datetime('now', 'localtime'), ?, ?);"
     } else {
-      queryString = "INSERT INTO \(tableName) (Type, Original) VALUES (?, ?);"
+        queryString = "INSERT INTO \(tableName) (Type, Original) VALUES (?, ?);"
     }
     
     var statement: OpaquePointer?
-    
     if sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK {
-      if tableName.lowercased() == "diary" {
-
-        sqlite3_bind_text(statement, 2, (type as NSString).utf8String, -1, nil)
-        sqlite3_bind_blob(statement, 3, (originalData! as NSData).bytes, Int32(originalData!.count), nil)
-
-      } else {
-        
-        sqlite3_bind_text(statement, 1, (type as NSString).utf8String, -1, nil)
-        sqlite3_bind_blob(statement, 2, (originalData! as NSData).bytes, Int32(originalData!.count), nil)
-        
-      }
-      
-      if sqlite3_step(statement) == SQLITE_DONE {
-        print("Successfully inserted row.")
-      } else {
-        let errmsg = String(cString: sqlite3_errmsg(db))
-        print("Could not insert row. Error: \(errmsg)")
-        let index = allIndex(from: "diary")
-        print("Indexs: \(String(describing: index))")
-      }
-      
-      sqlite3_finalize(statement)
+        if tableName.lowercased() == "diary" {
+            sqlite3_bind_text(statement, 1, (type as NSString).utf8String, -1, nil)
+            sqlite3_bind_blob(statement, 2, (originalData as NSData).bytes, Int32(originalData.count), nil)
+        } else {
+            sqlite3_bind_text(statement, 1, (type as NSString).utf8String, -1, nil)
+            sqlite3_bind_blob(statement, 2, (originalData as NSData).bytes, Int32(originalData.count), nil)
+        }
+        if sqlite3_step(statement) == SQLITE_DONE {
+            print("Successfully inserted row.")
+        } else {
+            let errmsg = String(cString: sqlite3_errmsg(db))
+            print("Could not insert row. Error: \(errmsg)")
+        }
+        sqlite3_finalize(statement)
     } else {
-      print("INSERT statement could not be prepared. Error: \(String(describing: sqlite3_errmsg(db)))")
-      if let error = String(cString: sqlite3_errmsg(db), encoding: .utf8) {
-        print("Failed to prepare insert statement. Error: \(error)")
-      }
+        if let error = String(cString: sqlite3_errmsg(db), encoding: .utf8) {
+            print("Failed to prepare insert statement. Error: \(error)")
+        }
     }
     
     func processData(type: String, for value: Any) -> Data? {
@@ -257,10 +246,35 @@ class BooksDatabase {
   }
 
   // 2.4 Read Type and Original content
-  public func getOriginal(at index: Int, from tableName: String) -> (type: String?, original: Any?) {
-    // Run the SQL to query content here and parse it by Type
-    // Return Type and the parsed Original
-    return (nil, nil)
+  public func getOriginal(at index: [Int], from tableName: String) -> [(type: String?, original: UIImage?)] {
+    var results: [(type: String?, original: UIImage?)] = []
+
+    let querySQL: String
+    let indexString = index.map(String.init).joined(separator: ", ")
+    querySQL = "SELECT Type, Original FROM \(tableName) WHERE ID IN (\(indexString));"
+    print(querySQL)
+    var queryStatement: OpaquePointer?
+    if sqlite3_prepare_v2(db, querySQL, -1, &queryStatement, nil) == SQLITE_OK {
+      while sqlite3_step(queryStatement) == SQLITE_ROW {
+        if let typeCStr = sqlite3_column_text(queryStatement, 0),
+           let originalBlob = sqlite3_column_blob(queryStatement, 1) {
+          let originalBlobLength = sqlite3_column_bytes(queryStatement, 1)
+          let type = String(cString: typeCStr)
+          let data = Data(bytes: originalBlob, count: Int(originalBlobLength))
+          let originalImage = UIImage(data: data)
+          print("Type: \(type), Image Data Length: \(originalBlobLength)")
+          results.append((type, originalImage))
+        }
+      }
+    } else {
+      if let error = String(cString: sqlite3_errmsg(db), encoding: .utf8) {
+        print("Error preparing select: \(error)")
+      }
+    }
+    sqlite3_finalize(queryStatement)
+
+    print(results)
+    return results
   }
 
   // MARK: - Helper functions - Crop operations
@@ -281,7 +295,7 @@ class BooksDatabase {
   }
 
   // 3.4 Read crop content
-  public func getCrop(at index: Int, from tableName: String) -> Any? {
+  public func getCrop(at index: [Int], from tableName: String) -> [Any]? {
     // Run the SQL to query crop content here and parse it by Type
     // Return the parsed crop
     return nil
@@ -305,10 +319,10 @@ class BooksDatabase {
   }
 
   // 4.4 Read Words and Positions content
-  public func getContent(at indexu: Int, from tableName: String) -> PageContent? {
+  public func getContent(at index: [Int], from tableName: String) -> [PageContent?] {
     // Run the SQL to query words and positions content here and parse it by Type
     // Return the parsed words and positions
-    return nil
+    return [nil]
   }
 
   // Close the database connection
