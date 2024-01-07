@@ -43,6 +43,14 @@
 		347D07BB2B1163AF007CA826 /* BookListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347D07B52B1163AF007CA826 /* BookListView.swift */; };
 		347D07BC2B1163AF007CA826 /* ReadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347D07B62B1163AF007CA826 /* ReadingView.swift */; };
 		347D07BF2B1163AF007CA826 /* PhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347D07B92B1163AF007CA826 /* PhotosView.swift */; };
+		3499D8112B4629CB00983DD1 /* ResultsFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3499D8102B4629CB00983DD1 /* ResultsFormat.swift */; };
+		3499D8222B468C6600983DD1 /* verb.exc in Resources */ = {isa = PBXBuildFile; fileRef = 3499D81E2B468C6600983DD1 /* verb.exc */; };
+		3499D8232B468C6600983DD1 /* adj.exc in Resources */ = {isa = PBXBuildFile; fileRef = 3499D81F2B468C6600983DD1 /* adj.exc */; };
+		3499D8242B468C6600983DD1 /* noun.exc in Resources */ = {isa = PBXBuildFile; fileRef = 3499D8202B468C6600983DD1 /* noun.exc */; };
+		3499D8252B468C6600983DD1 /* adv.exc in Resources */ = {isa = PBXBuildFile; fileRef = 3499D8212B468C6600983DD1 /* adv.exc */; };
+		3499D83E2B48BCF100983DD1 /* other.exc in Resources */ = {isa = PBXBuildFile; fileRef = 3499D83D2B48BCF100983DD1 /* other.exc */; };
+		3499D8402B4A588F00983DD1 /* UnknowWords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3499D83F2B4A588F00983DD1 /* UnknowWords.swift */; };
+		3499D8422B4A5B9700983DD1 /* UnknowWords.db in Resources */ = {isa = PBXBuildFile; fileRef = 3499D8412B4A5B9600983DD1 /* UnknowWords.db */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -84,6 +92,14 @@
 		347D07B52B1163AF007CA826 /* BookListView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookListView.swift; sourceTree = "<group>"; };
 		347D07B62B1163AF007CA826 /* ReadingView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadingView.swift; sourceTree = "<group>"; };
 		347D07B92B1163AF007CA826 /* PhotosView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotosView.swift; sourceTree = "<group>"; };
+		3499D8102B4629CB00983DD1 /* ResultsFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultsFormat.swift; sourceTree = "<group>"; };
+		3499D81E2B468C6600983DD1 /* verb.exc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = verb.exc; sourceTree = "<group>"; };
+		3499D81F2B468C6600983DD1 /* adj.exc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = adj.exc; sourceTree = "<group>"; };
+		3499D8202B468C6600983DD1 /* noun.exc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = noun.exc; sourceTree = "<group>"; };
+		3499D8212B468C6600983DD1 /* adv.exc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = adv.exc; sourceTree = "<group>"; };
+		3499D83D2B48BCF100983DD1 /* other.exc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = other.exc; sourceTree = "<group>"; };
+		3499D83F2B4A588F00983DD1 /* UnknowWords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnknowWords.swift; sourceTree = "<group>"; };
+		3499D8412B4A5B9600983DD1 /* UnknowWords.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = UnknowWords.db; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -188,6 +204,7 @@
 			children = (
 				3414C6E92AFF19DA0085ABAB /* UniformFormat.swift */,
 				3414C6E02AFF196C0085ABAB /* OCR.swift */,
+				3499D8102B4629CB00983DD1 /* ResultsFormat.swift */,
 				3414C6DF2AFF196C0085ABAB /* Splitter.swift */,
 			);
 			path = UniformFormat;
@@ -199,6 +216,7 @@
 				3414C6FD2B014E930085ABAB /* TextFilter.swift */,
 				3414C7012B014EFD0085ABAB /* POS_Tagging.swift */,
 				3414C6FF2B014EE00085ABAB /* Lemmatization.swift */,
+				3499D81D2B468C6600983DD1 /* LEWords */,
 				3414C7032B014F640085ABAB /* LearnedWordFilter.swift */,
 			);
 			path = TextFilter;
@@ -228,6 +246,7 @@
 				3414C6F32AFF51980085ABAB /* LearnedWords.db */,
 				3414C6F92AFF557F0085ABAB /* Dictionary.db */,
 				3414C6F72AFF54DA0085ABAB /* UserInfo.db */,
+				3499D8412B4A5B9600983DD1 /* UnknowWords.db */,
 			);
 			path = DataFile;
 			sourceTree = "<group>";
@@ -239,6 +258,7 @@
 				347D07912B02CAC0007CA826 /* LearnedWords.swift */,
 				347D07972B0EDA9D007CA826 /* Dictionary.swift */,
 				347D079C2B0EE09B007CA826 /* UserInfo.swift */,
+				3499D83F2B4A588F00983DD1 /* UnknowWords.swift */,
 			);
 			path = Visitor;
 			sourceTree = "<group>";
@@ -286,11 +306,24 @@
 				344148002B12DB540091B29F /* NavigationView.swift */,
 				347D07B52B1163AF007CA826 /* BookListView.swift */,
 				3414C6D12AFF132A0085ABAB /* CameraView.swift */,
-				347D07B62B1163AF007CA826 /* ReadingView.swift */,
 				347D07B92B1163AF007CA826 /* PhotosView.swift */,
+				347D07B62B1163AF007CA826 /* ReadingView.swift */,
 				344148022B12E4EE0091B29F /* LoadingView.swift */,
 			);
 			path = UIs;
+			sourceTree = "<group>";
+		};
+		3499D81D2B468C6600983DD1 /* LEWords */ = {
+			isa = PBXGroup;
+			children = (
+				3499D81E2B468C6600983DD1 /* verb.exc */,
+				3499D81F2B468C6600983DD1 /* adj.exc */,
+				3499D8202B468C6600983DD1 /* noun.exc */,
+				3499D8212B468C6600983DD1 /* adv.exc */,
+				3499D83D2B48BCF100983DD1 /* other.exc */,
+			);
+			name = LEWords;
+			path = ../../../../../../../OCR/OCR/LEWords;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -351,11 +384,17 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3499D8242B468C6600983DD1 /* noun.exc in Resources */,
 				3414C6F42AFF51980085ABAB /* LearnedWords.db in Resources */,
 				3414C6AD2AFDA31B0085ABAB /* Preview Assets.xcassets in Resources */,
+				3499D8422B4A5B9700983DD1 /* UnknowWords.db in Resources */,
 				3414C6F82AFF54DA0085ABAB /* UserInfo.db in Resources */,
+				3499D8222B468C6600983DD1 /* verb.exc in Resources */,
+				3499D8232B468C6600983DD1 /* adj.exc in Resources */,
 				3414C6AA2AFDA31B0085ABAB /* Assets.xcassets in Resources */,
 				347D07AB2B116374007CA826 /* README.rtf in Resources */,
+				3499D83E2B48BCF100983DD1 /* other.exc in Resources */,
+				3499D8252B468C6600983DD1 /* adv.exc in Resources */,
 				3414C6FA2AFF557F0085ABAB /* Dictionary.db in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -378,6 +417,7 @@
 				3414C6CF2AFDA7860085ABAB /* MemoryCurveFilter.swift in Sources */,
 				3414C6E42AFF196C0085ABAB /* Splitter.swift in Sources */,
 				3414C7042B014F640085ABAB /* LearnedWordFilter.swift in Sources */,
+				3499D8112B4629CB00983DD1 /* ResultsFormat.swift in Sources */,
 				347D07942B02D1C1007CA826 /* GeneralTools.swift in Sources */,
 				347D07922B02CAC0007CA826 /* LearnedWords.swift in Sources */,
 				3414C6E52AFF196C0085ABAB /* OCR.swift in Sources */,
@@ -396,6 +436,7 @@
 				3414C6B62AFDA39C0085ABAB /* Assessment.swift in Sources */,
 				3414C6FE2B014E930085ABAB /* TextFilter.swift in Sources */,
 				347D07962B0ED8A5007CA826 /* WordsDefinite.swift in Sources */,
+				3499D8402B4A588F00983DD1 /* UnknowWords.swift in Sources */,
 				344148032B12E4EE0091B29F /* LoadingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -540,7 +581,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -572,7 +613,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

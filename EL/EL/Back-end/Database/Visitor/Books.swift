@@ -54,7 +54,7 @@ class BooksDatabase {
     ID INTEGER PRIMARY KEY AUTOINCREMENT,
     EntryDate DATETIME,
     Type TEXT,
-    Original TEXT,
+    Original BLOB,
     Crop TEXT,
     Words TEXT,
     Positions TEXT,
@@ -120,7 +120,7 @@ class BooksDatabase {
       ID INTEGER PRIMARY KEY,
       Type TEXT,
       Original BLOB,
-      Crop BLOB,
+      Crop TEXT,
       Words TEXT,
       Positions TEXT
       Pointer TEXT
@@ -303,29 +303,157 @@ class BooksDatabase {
 
   // MARK: - Helper functions - Words, Positions and Pointer operations
 
-  // 4.1 Add Words and Positions content
-  public func addContent(at index: Any?, content: PageContent, to tableName: String) {
-    // Run the SQL to insert words and positions content here
+  // 4.1 Add Words, Positions and Pointer content
+  public func addContent(at index: Int, content: PageContent, to tableName: String) {
+    let wordsText = content.texts.joined(separator: " ")
+    let positionsText = encodePositions(content.positions as! [[Quadrilateral]])
+    let pointerText = encodePointer(content.pointer)
+    
+    let insertStatementString = "UPDATE \(tableName) SET Words = ?, Positions = ?, Pointer = ? WHERE ID = ?;"
+
+    var insertStatement: OpaquePointer?
+    if sqlite3_prepare_v2(db, insertStatementString, -1, &insertStatement, nil) == SQLITE_OK {
+      
+      let utf8WordsText = strdup(wordsText)
+      sqlite3_bind_text(insertStatement, 1, utf8WordsText, -1, nil)
+      
+      let utf8PositionsText = strdup(positionsText)
+      sqlite3_bind_text(insertStatement, 2, utf8PositionsText, -1, free)
+      
+      let utf8PointerText = strdup(pointerText)
+      sqlite3_bind_text(insertStatement, 3, utf8PointerText, -1, free)
+      sqlite3_bind_int(insertStatement, 4, Int32(index))
+      
+      if sqlite3_step(insertStatement) == SQLITE_DONE {
+        print("Successfully inserted row.")
+      } else {
+        print("SQLite Error: \(String(cString: sqlite3_errmsg(db)))")
+      }
+      sqlite3_finalize(insertStatement)
+    } else {
+      print("INSERT statement could not be prepared.")
+    }
+  }
+  
+  private func encodePositions(_ positions: [[Quadrilateral]]) -> String {
+    return positions.map { quadrilaterals in
+      quadrilaterals.map { quadrilateral in
+        "{\(quadrilateral.topLeft.x),\(quadrilateral.topLeft.y);" +
+        "\(quadrilateral.topRight.x),\(quadrilateral.topRight.y);" +
+        "\(quadrilateral.bottomRight.x),\(quadrilateral.bottomRight.y);" +
+        "\(quadrilateral.bottomLeft.x),\(quadrilateral.bottomLeft.y)}"
+      }.joined(separator: "|")
+    }.joined(separator: "/")
+  }
+  
+  private func encodePointer(_ pointer: Pointer) -> String {
+    let phrasePointerText = pointer.phrasePointer.map { range -> String in
+      if let range = range {
+        return "\(range.lowerBound)-\(range.upperBound)"
+      } else {
+        return "nil"
+      }
+    }.joined(separator: ",")
+    
+    let sentencePointerText = pointer.sentencePointer.map { range -> String in
+      if let range = range {
+        return "\(range.lowerBound)-\(range.upperBound)"
+      } else {
+        return "nil"
+      }
+    }.joined(separator: ",")
+    
+    return "\(phrasePointerText)|\(sentencePointerText)"
   }
 
-  // 4.2 Update Words and Positions content
+  // 4.2 Update Words, Positions and Pointer content
   public func changeContent(at index: Int, newContent: PageContent, in tableName: String) {
     // Run the SQL to update words and positions content here
   }
 
-  // 4.3 Delete Words and Positions content
+  // 4.3 Delete Words, Positions and Pointer content
   public func deleteContent(at index: Int, from tableName: String) {
     // Run the SQL to delete words and positions content here
   }
 
-  // 4.4 Read Words and Positions content
+  // 4.4 Read Words, Positions and Pointer content
   public func getContent(at index: [Int], from tableName: String) -> [PageContent?] {
-    // Run the SQL to query words and positions content here and parse it by Type
-    // Return the parsed words and positions
-    return [nil]
+    var pageContents: [PageContent?] = []
+    
+    let idList = index.map(String.init).joined(separator: ",")
+    let queryStatementString = "SELECT Words, Positions, Pointer FROM \(tableName) WHERE ID IN (\(idList));"
+    
+    var queryStatement: OpaquePointer?
+    if sqlite3_prepare_v2(db, queryStatementString, -1, &queryStatement, nil) == SQLITE_OK {
+      while sqlite3_step(queryStatement) == SQLITE_ROW {
+        if let wordsCString = sqlite3_column_text(queryStatement, 0),
+           let positionsCString = sqlite3_column_text(queryStatement, 1),
+           let pointerCString = sqlite3_column_text(queryStatement, 2) {
+          let wordsText = String(cString: wordsCString)
+          let positionsText = String(cString: positionsCString)
+          let pointerText = String(cString: pointerCString)
+          
+          let words = wordsText.components(separatedBy: " ")
+          let positions = decodePositions(positionsText)
+          let pointer = decodePointer(pointerText)
+          
+          let pageContent = PageContent(texts: words, positions: positions, pointer: pointer)
+          pageContents.append(pageContent)
+        } else {
+          pageContents.append(nil)
+        }
+      }
+      sqlite3_finalize(queryStatement)
+    } else {
+      print("SELECT statement could not be prepared.")
+    }
+    
+    return pageContents
+  }
+  
+  private func decodePositions(_ text: String) -> [[Quadrilateral]] {
+    return text.split(separator: "/").map { quadrilateralGroup in
+      quadrilateralGroup.split(separator: "|").compactMap { quadrilateralText in
+        let points = quadrilateralText.dropFirst().dropLast().split(separator: ";").map { pointText -> CGPoint in
+          let coordinates = pointText.split(separator: ",").compactMap { Double($0) }
+          if coordinates.count == 2 {
+            return CGPoint(x: coordinates[0], y: coordinates[1])
+          } else {
+            return CGPoint.zero
+          }
+        }
+        if points.count == 4 {
+          return Quadrilateral(topLeft: points[0], topRight: points[1], bottomRight: points[2], bottomLeft: points[3])
+        } else {
+          return nil
+        }
+      }
+    }
+  }
+  
+  private func decodePointer(_ text: String) -> Pointer {
+    let parts = text.split(separator: "|")
+    let phrasePointers = parts.indices.contains(0) ? decodeRanges(from: String(parts[0])) : []
+    let sentencePointers = parts.indices.contains(1) ? decodeRanges(from: String(parts[1])) : []
+    
+    return Pointer(phrasePointer: phrasePointers, sentencePointer: sentencePointers)
   }
 
-  // Close the database connection
+  private func decodeRanges(from text: String) -> [Range<Int>?] {
+    return text.split(separator: ",").map { rangeText -> Range<Int>? in
+      if rangeText == "nil" {
+        return nil
+      }
+      let bounds = rangeText.split(separator: "-").compactMap { Int($0) }
+      if bounds.count == 2 {
+        return bounds[0]..<bounds[1]
+      } else {
+        return nil
+      }
+    }
+  }
+  
+  //MARK: - Close database connection
   deinit {
       // Close the database connection here
       // e.g. sqlite3_close(db)

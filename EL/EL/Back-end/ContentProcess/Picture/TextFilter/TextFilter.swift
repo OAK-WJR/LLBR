@@ -9,14 +9,14 @@ import Foundation
 
 class TextFilter {
   
-  let pos_tagging = POS_Tagging()
-  let lemmatization = Lemmatization()
-  let filter = LearnedWordFilter()
+  private let pos_tagging = POS_Tagging()
+  private let lemmatization = Lemmatization()
+  private let filter = LearnedWordFilter()
   
-  func TextFilter(from page: PageContent ) -> ([Word?],[Word?]) {
-    var pos_taged = pos_tagging.tagging(from: page)
-    var formated = lemmatization.lemmatize(pos_taged)
-    var filtered = filter.filter(from: formated)
-    return (pos_taged, filtered)
+  func textFilter(from page: PageContent ) -> ([Word],[Int]) {
+    let pos_taged = pos_tagging.tagging(from: page)
+    let formated = lemmatization.morphy(words: pos_taged)
+    let filtered = filter.filter(from: formated)
+    return (pos_taged.map{Word(texts: $0.texts.lowercased(), pos: $0.pos)}, filtered)
   }
 }

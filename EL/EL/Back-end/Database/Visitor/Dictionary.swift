@@ -6,64 +6,59 @@
 //
 
 import Foundation
+import SQLite3
 
 class DictionaryDatabase {
-  // Database connection pointer
   var db: OpaquePointer?
   
-  // Initialize the database connection
   init() {
-    // Open the database connection here
-    // e.g. sqlite3_open("path_to_database", &db)
+    guard let path = Bundle.main.path(forResource: "Dictionary", ofType: "db") else {
+      print("Database file not found")
+      return
+    }
+    
+    if sqlite3_open(path, &db) != SQLITE_OK {
+      if let error = String(validatingUTF8: sqlite3_errmsg(db)) {
+        print("Error opening database: \(error)")
+      }
+    }
   }
   
-  //MARK: - Main function - Filter words
-  
-  func definition(_ words: [Word?]) -> [String?] {
-    //splitForm = group the words with firstLetterClassification -> ([String:[String]], [String:[[Int]]])
-    /*Ex: [Word(texts: "apple", pos: .noun),
-           Word(texts: "banana", pos: .noun),
-           Word(texts: "cat", pos: .noun),
-           Word(texts: "act", pos: .noun),
-           Word(texts: "camera", pos: .noun),
-           Word(texts: "apple", pos: .noun)]
-     */
+  func definition(_ words: [String]) -> [String: String] {
+    var results = [String: String]()
+    var wordGroups = [String: [String]]()
     
-    /*  ->["a":["apple", "act"],
-           "b":["banana"],
-           "c":["cat", "camera"]
-     */
-    //  ->["a":[[0, 5], [3]], "b":[[1]], "c":[[2], [4]]
+    for word in words {
+      let initial = String(word.first?.lowercased() ?? "_").rangeOfCharacter(from: CharacterSet.letters) == nil ? "SPECIAL_Words" : word.first!.uppercased() + "_Words"
+      wordGroups[initial, default: []].append(word)
+    }
     
+    for (initial, groupWords) in wordGroups {
+      let placeholders = groupWords.map { _ in "word COLLATE NOCASE = ?" }.joined(separator: " OR ")
+      let queryString = "SELECT word, translation FROM \(initial) WHERE \(placeholders)"
+      var statement: OpaquePointer?
+      
+      if sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK {
+        for (index, word) in groupWords.enumerated() {
+          let utf8Word = strdup(word)
+          sqlite3_bind_text(statement, Int32(index + 1), utf8Word, -1, free)
+        }
+        
+        while sqlite3_step(statement) == SQLITE_ROW {
+          let word = String(cString: sqlite3_column_text(statement, 0))
+          let translation = String(cString: sqlite3_column_text(statement, 1))
+          results[word] = translation
+        }
+        sqlite3_finalize(statement)
+      } else {
+        print("SELECT statement could not be prepared")
+      }
+    }
     
-    //definitions = look up the definitions of the words in splitForm[0] in the database, using "" when there is none
-    /*Ex: ["a":["apple", "act"],
-           "b":["banana"],
-           "c":["cat", "camera"]
-     */
-    /*Database: ["apple":"n. apple",
-              "act":"n. behavior",
-              "banana":"n. banana",
-              "cat":"n. cat"]
-     */
-
-    //  ->["a":["n. apple", "n. behavior"], "b":["n. banana"], "c":["n. cat", ""]]
-
-    
-    //formated = use splitForm[1] to put filtered back into the original order
-    //Ex: filtered = ["a":["n. apple", "n. behavior"], "b":["n. banana"], "c":["n. cat", ""]]
-    //    splitForm[1]] = ["a":[[0, 5], [3]], "b":[[1]], "c":[[2], [4]]
-    
-    //  ->["n. apple", "n. banana", "n. cat", "n. behavior", "", "n. apple"]
-    
-    
-    //return formated
-    return [nil]
+    return results
   }
   
-  // Close the database connection
   deinit {
-    // Close the database connection here
-    // e.g. sqlite3_close(db)
+    sqlite3_close(db)
   }
 }

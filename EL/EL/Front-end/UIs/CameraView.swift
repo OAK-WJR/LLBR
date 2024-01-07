@@ -52,9 +52,8 @@ struct CameraView: View {
             })
           )
       } else {
-        CustomCameraView(image: $image, width: screen.width,
-                                        height: screen.height)
-        .ignoresSafeArea(.all)
+        CustomCameraView(image: $image)
+        .frame(width: screen.width, height: screen.height)
         .overlay(
             VStack {
               Spacer()
@@ -72,15 +71,11 @@ struct CameraView: View {
 
 struct CustomCameraView: UIViewControllerRepresentable {
   @Binding var image: UIImage?
-  var width: CGFloat
-  var height: CGFloat
   @Environment(\.presentationMode) var presentationMode
 
   func makeUIViewController(context: Context) -> CustomCameraViewController {
     let viewController = CustomCameraViewController()
     viewController.delegate = context.coordinator
-    viewController.width = width
-    viewController.height = height
     return viewController
   }
 
@@ -98,7 +93,7 @@ struct CustomCameraView: UIViewControllerRepresentable {
     }
 
     func didTakePhoto(_ image: UIImage?) {
-      let zipedImage = OriginalProcessing.Photo().zipImage(image: image!)
+      let zipedImage = OriginalProcessing.Photo().processImage(image: image!)
       parent.image = zipedImage
       parent.presentationMode.wrappedValue.dismiss()
     }
@@ -149,8 +144,8 @@ class CustomCameraViewController: UIViewController {
 
   func setupPreviewLayer(session: AVCaptureSession) {
     previewLayer = AVCaptureVideoPreviewLayer(session: session)
-    previewLayer?.videoGravity = .resizeAspectFill
-    previewLayer?.frame = CGRect(x: 0, y: 0, width: width, height: height)
+    previewLayer?.videoGravity = .resizeAspect
+    previewLayer?.frame = view.layer.bounds
     view.layer.addSublayer(previewLayer!)
   }
 
@@ -169,7 +164,8 @@ class CustomCameraViewController: UIViewController {
 extension CustomCameraViewController: AVCapturePhotoCaptureDelegate {
   func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
     guard let imageData = photo.fileDataRepresentation() else { return }
-    let image = UIImage(data: imageData)
+    var image = UIImage(data: imageData)
+    image = image?.fixOrientation()
     delegate?.didTakePhoto(image)
   }
 }

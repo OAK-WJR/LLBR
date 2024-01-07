@@ -6,20 +6,69 @@
 //
 
 import Foundation
-import UIKit
+import SwiftUI
+import Vision
 
 class OriginalProcessing {
   
   class Photo {
     
-    func zipImage(image: UIImage) -> UIImage? {
-      let resizedImage = resizeImage(image: image, maxDimension: 1080)
-      let compressedImageData = compressImage(image: resizedImage)
-      
-      print("Compressed image size: \(String(describing: compressedImageData)) bytes")
+    func processImage(image: UIImage) -> UIImage? {
+      let doumentImage = getDocumentImage(from: image)
+    
       print("Original image size: \(image.pngData()?.count ?? 0) bytes")
       
-      return UIImage(data: compressedImageData!) ?? nil
+      return doumentImage
+    }
+    
+    private func getDocumentImage(from image: UIImage) -> UIImage? {
+      guard let ciImage = CIImage(image: image) else { return nil }
+      
+      let requestHandler = VNImageRequestHandler(ciImage: ciImage, options: [:])
+      let documentDetectionRequest = VNDetectDocumentSegmentationRequest()
+      
+      do {
+        try requestHandler.perform([documentDetectionRequest])
+      } catch {
+        print("Document segmentation request failed: \(error)")
+        return nil
+      }
+      
+      guard let document = documentDetectionRequest.results?.first as? VNRectangleObservation,
+            let ciDocumentImage = perspectiveCorrectedImage(from: ciImage, rectangleObservation: document) else {
+        return nil
+      }
+      
+      let context = CIContext(options: nil)
+      guard let cgImage = context.createCGImage(ciDocumentImage, from: ciDocumentImage.extent) else {
+        return nil
+      }
+      
+      return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
+    }
+    
+    private func perspectiveCorrectedImage(from inputImage: CIImage, rectangleObservation: VNRectangleObservation ) -> CIImage? {
+      let imageSize = inputImage.extent.size
+      
+      // Verify detected rectangle is valid.
+      let boundingBox = rectangleObservation.boundingBox.scaled(to: imageSize)
+      guard inputImage.extent.contains(boundingBox)
+      else { print("invalid detected rectangle"); return nil}
+      
+      // Rectify the detected image and reduce it to inverted grayscale for applying model.
+      let topLeft = rectangleObservation.topLeft.scaled(to: imageSize)
+      let topRight = rectangleObservation.topRight.scaled(to: imageSize)
+      let bottomLeft = rectangleObservation.bottomLeft.scaled(to: imageSize)
+      let bottomRight = rectangleObservation.bottomRight.scaled(to: imageSize)
+      let correctedImage = inputImage
+        .cropped(to: boundingBox)
+        .applyingFilter("CIPerspectiveCorrection", parameters: [
+          "inputTopLeft": CIVector(cgPoint: topLeft),
+          "inputTopRight": CIVector(cgPoint: topRight),
+          "inputBottomLeft": CIVector(cgPoint: bottomLeft),
+          "inputBottomRight": CIVector(cgPoint: bottomRight)
+        ])
+      return correctedImage
     }
     
     func createThumbnail(images: [UIImage], targetSize: CGSize) -> [UIImage]? {
@@ -37,34 +86,37 @@ class OriginalProcessing {
         return UIGraphicsGetImageFromCurrentImageContext()
       }
     }
+  }
+}
 
-    
-    private func resizeImage(image: UIImage, maxDimension: CGFloat) -> UIImage {
-      let size = image.size
-      
-      var ratio: CGFloat = 1.0
-      if size.width > maxDimension || size.height > maxDimension {
-        if size.width > size.height {
-          ratio = maxDimension / size.width
-        } else {
-          ratio = maxDimension / size.height
-        }
-      }
-      
-      let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
-      let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
-      
-      UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
-      image.draw(in: rect)
-      let newImage = UIGraphicsGetImageFromCurrentImageContext()
-      UIGraphicsEndImageContext()
-      
-      return newImage ?? image
+extension CGPoint {
+  func scaled(to size: CGSize) -> CGPoint {
+    return CGPoint(x: self.x * size.width, y: self.y * size.height)
+  }
+}
+
+extension CGRect {
+  func scaled(to size: CGSize) -> CGRect {
+    return CGRect(
+      x: self.origin.x * size.width,
+      y: self.origin.y * size.height,
+      width: self.size.width * size.width,
+      height: self.size.height * size.height
+    )
+  }
+}
+
+extension UIImage {
+  func fixOrientation() -> UIImage? {
+    if self.imageOrientation == .up {
+      return self
     }
     
-    private func compressImage(image: UIImage) -> Data? {
-      return image.jpegData(compressionQuality: 0.7)
-    }
+    UIGraphicsBeginImageContextWithOptions(self.size, false, self.scale)
+    self.draw(in: CGRect(origin: .zero, size: self.size))
+    let normalizedImage = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
     
+    return normalizedImage
   }
 }

@@ -10,7 +10,6 @@ import UIKit
 
 // MARK: - Basic Definitions
 
-//Quadrilateral box around a word
 struct Quadrilateral {
     var topLeft: CGPoint
     var topRight: CGPoint
@@ -18,7 +17,6 @@ struct Quadrilateral {
     var bottomLeft: CGPoint
 }
 
-//Part-of-speech type
 enum POSType {
   case noun
   case verb
@@ -29,6 +27,7 @@ enum POSType {
   case conjunction
   case interjection
   case determiner
+  case other
 }
 
 enum Direction {
@@ -56,7 +55,7 @@ struct Pointer {
 //Content info for one page
 struct PageContent {
   var texts: [String]
-  var postions: [Any]
+  var positions: [Any]?
   var pointer: Pointer
 }
 
@@ -70,8 +69,14 @@ struct Page {
   
 }
 
-// MARK: - LearedWords Structure
+struct PictureShowPage {
+  var texts: [Word]?
+  var positions: [[Quadrilateral]]?
+  var unknowWordsIndex: [Int]?
+  var definitions: [String:(word: String, definitions: [POSType:[String]])]?
+}
 
+// MARK: - LearedWords Structure
 
 struct Word {
   var texts: String
