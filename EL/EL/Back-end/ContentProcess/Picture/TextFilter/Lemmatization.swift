@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import NaturalLanguage
+import UIKit
 
 class Lemmatization {
   private let NOUN = POSType.noun, VERB = POSType.verb, ADJ = POSType.adjective, ADV = POSType.adverb, DET = POSType.determiner
@@ -30,11 +32,15 @@ class Lemmatization {
              ("ed", "e"),
              ("ed", ""),
              ("ing", "e"),
-             ("ing", "")],
+             ("ing", ""),
+             ("\'t", ""),
+             ("n\'t", "n")],
       ADJ: [("er", ""),
             ("est", ""),
             ("er", "e"),
             ("est", "e")],
+      ADV: [("\'t", ""),
+            ("n\'t", "")],
       DET: [("an", "a")]
     ]
     exceptionMap = [:]
@@ -58,23 +64,55 @@ class Lemmatization {
   }
   
   func morphy(words: [Word]) -> [[Word]] {
-    var lemmatizedWords: [[Word]] = []
     
+    var lemmatizedWords: [[Word]] = []
     for word in words {
-      if let exceptions = exceptionMap[word.pos]?[word.texts] {
-        lemmatizedWords.append(exceptions.map{Word(texts: $0, pos: word.pos)})
+      let word = Word(texts: word.texts.lowercased(), pos: word.pos)
+      if let exceptions = getExceptions(for: word) {
+        lemmatizedWords.append(exceptions.map { Word(texts: $0, pos: word.pos) })
       } else {
-        let substitutions = morphologicalSubstitutions[word.pos, default: []]
-        let forms = substitutions.compactMap { old, new -> String? in
-          if word.texts.hasSuffix(old) {
-            return String(word.texts.dropLast(old.count)) + new
-          }
-          return nil
-        }
-        lemmatizedWords.append([word] + forms.map { Word(texts: $0, pos: word.pos) })
+        lemmatizedWords.append(lemmatizeWord(word))
       }
+      print(word.texts, word.pos)
+      print(lemmatizedWords.last)
     }
     
     return lemmatizedWords
+  }
+  
+  private func getExceptions(for word: Word) -> [String]? {
+    let posTypes: [POSType] = word.pos == .other ? [VERB, NOUN, ADJ, ADV, DET] : [word.pos]
+    print(word.texts," ",posTypes)
+    for pos in posTypes {
+      if let exceptions = exceptionMap[pos]?[word.texts] {
+        print(exceptions)
+        return exceptions
+      }
+    }
+    return nil
+  }
+  
+  private func lemmatizeWord(_ word: Word) -> [Word] {
+    var allForms: [Word] = [word]
+    let posTypes: [POSType] = word.pos == .other ? [VERB, NOUN, ADJ, ADV, DET] : [word.pos]
+    
+    for pos in posTypes {
+      let substitutions = morphologicalSubstitutions[pos, default: []]
+      allForms += substitutions.compactMap { old, new -> String? in
+        if word.texts.hasSuffix(old) {
+          return String(word.texts.dropLast(old.count)) + new
+        }
+        return nil
+      }.map { Word(texts: $0, pos: pos) }
+    }
+    
+    return allForms
+  }
+}
+
+extension String {
+  var isBlank: Bool {
+    let trimmedStr = self.trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmedStr.isEmpty
   }
 }

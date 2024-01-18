@@ -30,7 +30,8 @@ class UniformFormat {
       let (words, timeRanges) = ocr.processAudio(inputAudio: inputAudio)
       let (formatedWords, formatedTimeRanges) = format.processAudio(audio: inputAudio, allTexts: words, allTimeRanges: timeRanges)!
       let pointer = textProcessor.process(words: formatedWords)
-      return PageContent(texts: formatedWords.flatMap{$0}, positions: formatedTimeRanges.flatMap{$0}, pointer: pointer!)
+      return PageContent(texts: formatedWords.flatMap{$0}, 
+                         positions: formatedTimeRanges.flatMap{$0}, pointer: pointer!)
       
     } else if let inputText = content as? String {
       let words = ocr.processText(inputText: inputText)

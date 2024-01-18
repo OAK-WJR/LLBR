@@ -34,7 +34,6 @@ struct NavigationView: View {
           Text(" ")
           Image(systemName: "list.bullet")
           Text(bookName.uppercased())
-          Spacer(minLength: 0)
         }
         .foregroundColor(.white)
         .font(Font.headline.weight(.bold))
@@ -47,12 +46,10 @@ struct NavigationView: View {
         }
         
       }) {
-        HStack() {
-          Text(String(ids.count))
-          Text("")
-        }
-        .foregroundColor(.white)
-        .font(Font.headline.weight(.bold))
+        Text(String(ids.count))
+          .frame(maxWidth: .infinity)
+          .foregroundColor(.white)
+          .font(Font.headline.weight(.bold))
       }
       .onAppear {
         DispatchQueue.global(qos: .userInitiated).async {

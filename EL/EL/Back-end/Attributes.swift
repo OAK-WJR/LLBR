@@ -11,10 +11,10 @@ import UIKit
 // MARK: - Basic Definitions
 
 struct Quadrilateral {
-    var topLeft: CGPoint
-    var topRight: CGPoint
-    var bottomRight: CGPoint
-    var bottomLeft: CGPoint
+  var topLeft: CGPoint
+  var topRight: CGPoint
+  var bottomRight: CGPoint
+  var bottomLeft: CGPoint
 }
 
 enum POSType {
@@ -28,6 +28,21 @@ enum POSType {
   case interjection
   case determiner
   case other
+  
+  var stringValue: String {
+    switch self {
+    case .noun: return "noun"
+    case .verb: return "verb"
+    case .adjective: return "adjective"
+    case .adverb: return "adverb"
+    case .pronoun: return "pronoun"
+    case .preposition: return "preposition"
+    case .conjunction: return "conjunction"
+    case .interjection: return "interjection"
+    case .determiner: return "determiner"
+    case .other: return "other"
+    }
+  }
 }
 
 enum Direction {
@@ -73,6 +88,7 @@ struct PictureShowPage {
   var texts: [Word]?
   var positions: [[Quadrilateral]]?
   var unknowWordsIndex: [Int]?
+  var learningWordsIndex: [Int]?
   var definitions: [String:(word: String, definitions: [POSType:[String]])]?
 }
 

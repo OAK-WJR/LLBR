@@ -9,7 +9,7 @@ import SwiftUI
 
 struct PhotosView: View {
   @Binding var bookName: String
-  @Binding var index: Int
+  @Binding var pageIndex: Int
   @Binding var ids: [Int]
   @State var pictures = [UIImage]()
   @State var imagesPerLine: Int = 4
@@ -26,33 +26,57 @@ struct PhotosView: View {
             ForEach(0..<pictures.count, id: \.self) { idx in
               Button(action: {
                 DispatchQueue.global(qos: .userInitiated).async {
-                  index = ids[idx] - 1
-                  print(index)
-                  let bookPageContent = BooksDatabase().getOriginal(at: [ids[index]], from: bookName)[0]
+                  pageIndex = ids[idx] - 1
+                  print(pageIndex)
+                  
+                  let getImage_StartTime = Date()
+                  let bookPageContent = BooksDatabase().getOriginal(at: [ids[pageIndex]], from: bookName)[0]
+                  let getImage_Time = Date().timeIntervalSince(getImage_StartTime)
+                  
                   if let image = bookPageContent.original {
-                    var pageContent = BooksDatabase().getContent(at: [ids[index]], from: bookName)[0]
+                    
+                    let getContent_StartTime = Date()
+                    //get book content
+                    var pageContent = BooksDatabase().getContent(at: [ids[pageIndex]], from: bookName)[0]
+                      //if no content, then recognize the image
                     if pageContent == nil {
                       pageContent = UniformFormat().classifyAndProcess(content: image)!
                       print("Words: \(pageContent!.texts.count)")
                       print("Positions: \(pageContent!.positions!.count)")
-                      BooksDatabase().addContent(at: ids[index], content: pageContent!, to: bookName)
+                      BooksDatabase().addContent(at: ids[pageIndex], content: pageContent!, to: bookName)
                     }
+                    let getContent_Time = Date().timeIntervalSince(getContent_StartTime)
                     
-                    let (formatedWords, filteredWordsIndex) = TextFilter().textFilter(from: pageContent!)
-                    let definitions: [String: (word: String, definitions: [POSType: [String]])] = WordsDefinite().definition(formatedWords)
+                    //get words, learnedWords, definitions)
+                    let (formatedWords, learnedFilteredWordsIndex, definitions) = TextFilter().textFilter(from: pageContent!)
                     
-                    var finalFilteredWordsIndex = [Int]()
-                    for index in filteredWordsIndex {
-                      if definitions[formatedWords[index].texts] != nil {
-                        finalFilteredWordsIndex.append(index)
+                    //get learningWordsIndex
+                    let getLearningWordsIndex_StartTime = Date()
+                    let learningWordsIndex = UnkowWordsFilter().filter(originalWords: formatedWords, bookIndex: bookName, pageIndex: pageIndex)
+                    let getLearningWordsIndex_Time = Date().timeIntervalSince(getLearningWordsIndex_StartTime)
+                    
+                    var finalLearnedFilteredWordsIndex = [Int]()
+
+                    var unknowWords = [String]()
+                    for index in learnedFilteredWordsIndex {
+                      let word = formatedWords[index].texts
+                      if definitions[word] != nil && !unknowWords.contains(word) {
+                        finalLearnedFilteredWordsIndex.append(index)
+                        unknowWords.append(word)
                       }
                     }
+                    finalLearnedFilteredWordsIndex = Set(finalLearnedFilteredWordsIndex + learningWordsIndex).sorted()
+                    
+                    print("getImage_Time: \(getImage_Time)")
+                    print("getContent_Time: \(getContent_Time)")
+                    print("getLearningWordsIndex_Time: \(getLearningWordsIndex_Time)")
                     
                     DispatchQueue.main.async {
                       self.image = image
                       result = PictureShowPage(texts: formatedWords as [Word],
                                                positions: pageContent?.positions as? [[Quadrilateral]],
-                                               unknowWordsIndex: finalFilteredWordsIndex as [Int],
+                                               unknowWordsIndex: finalLearnedFilteredWordsIndex as [Int],
+                                               learningWordsIndex: learningWordsIndex as [Int],
                                                definitions: definitions as [String: (word: String, definitions: [POSType: [String]])])
                     }
                   }
@@ -70,7 +94,7 @@ struct PhotosView: View {
           .padding(2)
         }
       } else {
-        ReadingView(image: image, pictureShowPage: $result)
+        ReadingView(bookName: bookName, pageIndex: pageIndex, image: image, pictureShowPage: $result)
       }
     } else {
       LoadingView()
@@ -90,7 +114,6 @@ struct PhotosView: View {
               let originals = BooksDatabase().getOriginal(at: batchIds, from: bookName)
                 .compactMap { $0.original }
               
-              // Create a thumbnail and append it to thumbnailPictures
               if let thumbnails = OriginalProcessing.Photo().createThumbnail(images: originals,
                                                                              targetSize: CGSize(width: 100, height: 100)) {
                 thumbnailPictures.append(contentsOf: thumbnails)

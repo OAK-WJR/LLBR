@@ -11,6 +11,9 @@ import Vision
 struct ReadingView: View {
   let screen = UIScreen.main.bounds.size
   
+  var bookName: String
+  var pageIndex: Int
+  
   var image: UIImage
   @Binding var pictureShowPage: PictureShowPage
 
@@ -28,6 +31,7 @@ struct ReadingView: View {
   @State private var offset: CGSize = .zero
   @State private var previousOffset: CGSize = .zero
   
+  @State private var showSheet = false
   private func pictrueSides(pRS: CGSize, zoom: CGFloat, newOffset: CGSize) -> CGSize {
     let maxWidthOffset = pRS.width / 2 * (zoom - 1) / zoom
     let maxHeightOffset = pRS.height / 2 * (zoom - 1) / zoom
@@ -46,16 +50,9 @@ struct ReadingView: View {
   
   var body: some View {
     VStack(spacing: 0) {
-      TabView(selection: $selectedTabIndex) {
-        ForEach(pictureShowPage.unknowWordsIndex ?? [], id: \.self) { index in
-          if let word = pictureShowPage.texts?[index] {
-            WordCardView(word: word, definitions: pictureShowPage.definitionForWord(at: index))
-              .tag(index)
-          }
-        }
+      Button("Show Words") {
+        self.showSheet = true
       }
-      .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-      .frame(height: 50)
       
       Image(uiImage: showingImage ?? image)
         .resizable()
@@ -75,20 +72,59 @@ struct ReadingView: View {
           GeometryReader { geometry in
             
             Color.white.opacity(0.0000001)
-              .onTapGesture { value in
+              .onTapGesture(count: 2) { value in
+                let pictureFrame = geometry.frame(in: .local)
+                
+                let tapPosition = CGPoint(x: (pictureFrame.midX * zoom - pictureFrame.midX + value.x) / zoom - offset.width,
+                                          y: (pictureFrame.midY * zoom - pictureFrame.midY + value.y) / zoom - offset.height)
                 
                 if let positions = pictureShowPage.positions {
                   var minDistance: CGFloat = 999
                   var minIndex: Int?
-                  print(value)
-                  print(zoom)
-                  print(offset)
                   
                   for (index, wordPositions) in positions.enumerated() {
                     for p in wordPositions {
                       let centerX = (p.topLeft.x + p.topRight.x + p.bottomLeft.x + p.bottomRight.x) / 4 * geometry.size.height
                       let centerY = (p.topLeft.y + p.topRight.y + p.bottomLeft.y + p.bottomRight.y) / 4 * geometry.size.height
-                      let distance = sqrt(pow(centerX - value.x, 2) + pow(centerY - value.y, 2))
+                      let distance = sqrt(pow(centerX - tapPosition.x, 2) + pow(centerY - tapPosition.y, 2))
+                      
+                      if distance < minDistance {
+                        minDistance = distance
+                        minIndex = index
+                      }
+                    }
+                  }
+                  
+                  if let closestIndex = minIndex {
+                    if pictureShowPage.unknowWordsIndex!.contains(closestIndex) {
+                      pictureShowPage.unknowWordsIndex!.remove(at: pictureShowPage.unknowWordsIndex!.firstIndex(of: closestIndex)!)
+                      
+                      DispatchQueue.global(qos: .userInitiated).async {
+                        let word = Lemmatization().morphy(words: [pictureShowPage.texts![closestIndex]])
+                        LearedWordsDatabase().add(word)
+                      }
+                    }
+                    
+                    pictureShowPage.unknowWordsIndex!.sort()
+                    showingImage = drawQuadrilateralsOnImage(pageInformation: pictureShowPage, baseImage: image)
+                  }
+                }
+              }
+              .onTapGesture(count: 1) { value in
+                let pictureFrame = geometry.frame(in: .local)
+                
+                let tapPosition = CGPoint(x: (pictureFrame.midX * zoom - pictureFrame.midX + value.x) / zoom - offset.width,
+                                          y: (pictureFrame.midY * zoom - pictureFrame.midY + value.y) / zoom - offset.height)
+                
+                if let positions = pictureShowPage.positions {
+                  var minDistance: CGFloat = 999
+                  var minIndex: Int?
+                  
+                  for (index, wordPositions) in positions.enumerated() {
+                    for p in wordPositions {
+                      let centerX = (p.topLeft.x + p.topRight.x + p.bottomLeft.x + p.bottomRight.x) / 4 * geometry.size.height
+                      let centerY = (p.topLeft.y + p.topRight.y + p.bottomLeft.y + p.bottomRight.y) / 4 * geometry.size.height
+                      let distance = sqrt(pow(centerX - tapPosition.x, 2) + pow(centerY - tapPosition.y, 2))
                       
                       if distance < minDistance {
                         minDistance = distance
@@ -100,9 +136,15 @@ struct ReadingView: View {
                   if let closestIndex = minIndex {
                     if !pictureShowPage.unknowWordsIndex!.contains(closestIndex) {
                       pictureShowPage.unknowWordsIndex!.append(closestIndex)
-                      pictureShowPage.unknowWordsIndex!.sort()
-                      showingImage = drawQuadrilateralsOnImage(pageInformation: pictureShowPage, baseImage: image)
+                      
+                      DispatchQueue.global(qos: .userInitiated).async {
+                        let word = Lemmatization().morphy(words: [pictureShowPage.texts![closestIndex]])
+                        LearedWordsDatabase().remove([word[0]])
+                      }
                     }
+                    pictureShowPage.unknowWordsIndex!.sort()
+                    showingImage = drawQuadrilateralsOnImage(pageInformation: pictureShowPage, baseImage: image)
+                    
                     selectedTabIndex = closestIndex
                   }
                 }
@@ -151,43 +193,85 @@ struct ReadingView: View {
         }
         .frame(width: pictureRealSize.width)
         .ignoresSafeArea(.all)
+      
+      Spacer(minLength: 0)
+      
+      TabView(selection: $selectedTabIndex) {
+        ForEach(pictureShowPage.unknowWordsIndex ?? [], id: \.self) { index in
+          WordCardView(pictureShowPage: $pictureShowPage, index: index, bookName: bookName, pageIndex: pageIndex)
+            .tag(index)
+        }
+      }
+      .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+      .frame(height: 90)
     }
     .onAppear {
       showingImage = drawQuadrilateralsOnImage(pageInformation: pictureShowPage, baseImage: image)
+    }
+    .sheet(isPresented: $showSheet) {
+      WordsSheetView(bookName: bookName)
     }
   }
 }
 
 struct WordCardView: View {
-  var word: Word
-  var definitions: [String]
+  @Binding var pictureShowPage: PictureShowPage
+  var index: Int
+  
+  var bookName: String
+  var pageIndex: Int
   
   var body: some View {
-    VStack(alignment: .leading, spacing: 2) {
-      Text(word.texts.capitalized)
-        .font(.system(size: 15))
-        .fontWeight(.bold)
-        .foregroundColor(Color.blue)
-        .padding(.bottom, 2)
-      
-      Divider()
-      
-      ScrollView(.vertical, showsIndicators: false) {
-        VStack(alignment: .leading, spacing: 5) {
-          ForEach(definitions, id: \.self) { definition in
-            Text(definition)
-              .font(.system(size: 10))
-              .foregroundColor(.secondary)
+    HStack(alignment: .top) {
+      if let word = pictureShowPage.texts?[index],
+         let learningWordsIndex = pictureShowPage.learningWordsIndex {
+        
+        Text(word.texts.capitalized)
+          .font(.system(size: 15))
+          .fontWeight(.bold)
+          .foregroundColor(Color.blue)
+        
+        Divider()
+        
+        ScrollView(.vertical, showsIndicators: false) {
+          VStack(alignment: .leading, spacing: 5) {
+            ForEach(pictureShowPage.definitionForWord(at: index), id: \.self) { definition in
+              Text(definition)
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+            }
           }
+        }
+        
+        Spacer(minLength: 0)
+        
+        let learning = learningWordsIndex.contains(index)
+        Button(action: {
+          print(learning)
+          print(index)
+          if learning {
+            pictureShowPage.learningWordsIndex?.remove(at: (pictureShowPage.learningWordsIndex?.firstIndex(of: index))!)
+            DispatchQueue.global(qos: .userInitiated).async {
+              UnknowWordsDatabase().remove(words: [word.texts])
+            }
+          } else {
+            pictureShowPage.learningWordsIndex?.append(index)
+            DispatchQueue.global(qos: .userInitiated).async {
+              print(word.texts)
+              UnknowWordsDatabase().add(words: [word.texts], bookIndex: bookName, pageIndex: pageIndex)
+            }
+          }
+        }) {
+          Image(systemName: learning ? "star.fill" : "star")
         }
       }
     }
     .padding()
-    .frame(width: 300, height: 90)
-    .background(Color.clear)
     .border(Color.white)
     .cornerRadius(15)
-    .shadow(color: .gray.opacity(0.5), radius: 5, x: 0, y: 2)
+    .frame(width: 300, height: 90)
+    .shadow(color: .white.opacity(0.5), radius: 5, x: 0, y: 2)
+    
   }
 }
 
@@ -203,6 +287,29 @@ extension PictureShowPage {
     }
     
     return wordData.definitions.values.flatMap { $0 }
+  }
+}
+
+struct WordsSheetView: View {
+  var bookName: String
+  @State private var words: [String] = []
+  
+  var body: some View {
+    if !words.isEmpty {
+      List(words, id: \.self) { word in
+        Text(word)
+      }
+      .navigationBarTitle("Words", displayMode: .inline)
+      .toolbar {
+        Button("Done") {
+        }
+      }
+    } else {
+      LoadingView()
+        .onAppear {
+          words = UnknowWordsDatabase().showAllWords()
+        }
+    }
   }
 }
 

@@ -33,7 +33,7 @@ class WordsDefinite {
       definitions[word.lowercased()] = (word: word, definitions: wordDefinitions)
     }
     
-    print(definitions)
+    print("definitions: \(definitions)")
     return definitions
   }
   

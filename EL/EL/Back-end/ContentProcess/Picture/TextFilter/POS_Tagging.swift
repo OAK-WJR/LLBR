@@ -27,6 +27,7 @@ class POS_Tagging {
     
     var all = [String]()
     for sentence in sentences {
+      print(sentence)
       let tagger = NLTagger(tagSchemes: [.lexicalClass])
       tagger.string = sentence
       
@@ -34,33 +35,35 @@ class POS_Tagging {
         if let tag = tag?.rawValue {
           all.append(String(sentence[tokenRange]))
           if tag == "Whitespace" {
+            let texts = allWords[allWords.count - 1].texts
+            let pattern = "-+$"
+            allWords[allWords.count - 1].texts = texts.replacingOccurrences(of: pattern, with: "", options: .regularExpression)
+            
             allWords.append(Word(texts: "", pos: .other))
           } else {
-            let wordsPOS = Set(["Noun", "Verb", "Adjective", "Adverb", "Pronoun", "Determiner", "OtherWord", "Particle", "Preposition", "Conjunction", "Interjection", "Classifier", "Idiom", "Dash", "WordJoiner", "OtherPunctuation"])
+            let wordsPOS = Set(["Noun", "Verb", "Adjective", "Adverb", "Pronoun", "Determiner", "OtherWord", "Particle", "Preposition", "Conjunction", "Interjection", "Classifier", "Idiom", "WordJoiner", "OtherPunctuation", "Dash"])
             if wordsPOS.contains(tag) {
-              let specificWords = ["\'s", "\'re", "\'ll", "n\'t"]
+              let specificWords = ["\'s", "\'re", "\'ll", "\'m", "\'t", "n\'t"]
               let originalWord = String(sentence[tokenRange])
               if !specificWords.contains(originalWord) {
-                var lemmaWord = originalWord
-                
-                let taggerL = NLTagger(tagSchemes: [.lemma])
-                taggerL.string = originalWord
-                let (lemma, _) = taggerL.tag(at: originalWord.startIndex, unit: .word, scheme: .lemma)
-                if let lemma = lemma {
-                  lemmaWord = lemma.rawValue
+                allWords[allWords.count - 1].texts += originalWord
+                if allWords[allWords.count - 1].pos == .other {
+                  allWords[allWords.count - 1].pos = convertStringToPOSType(tag: tag)
                 }
-                
-                allWords[allWords.count - 1].texts += lemmaWord
-                allWords[allWords.count - 1].pos = convertStringToPOSType(tag: tag)
               }
             }
           }
         }
         return true
       }
+      
+      if allWords[allWords.count - 1].texts.hasSuffix(".") {
+        allWords[allWords.count - 1].texts.removeLast()
+      }
+      
       allWords.append(Word(texts: "", pos: .other))
     }
-    return (allWords)
+    return (allWords.dropLast())
   }
   
   public func convertStringToPOSType(tag: String) -> POSType {
@@ -82,5 +85,21 @@ class POS_Tagging {
     default:
       return .other
     }
+  }
+  
+  func fixPOS(words: [Word], definitions: [String:(word: String, definitions: [POSType:[String]])]) -> [Word] {
+    var fixedPOSWords = [Word]()
+    for word in words {
+      if ((definitions[word.texts.lowercased()]) != nil) {
+        fixedPOSWords.append(word)
+      } else {
+        if ((definitions[word.texts.lowercased()]?.definitions[word.pos]) != nil) {
+          fixedPOSWords.append(word)
+        } else {
+          fixedPOSWords.append(Word(texts: word.texts, pos: .other))
+        }
+      }
+    }
+    return fixedPOSWords
   }
 }

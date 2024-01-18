@@ -8,9 +8,8 @@
 import Foundation
 
 class LearnedWordFilter {
-  func filter(from words: [[Word]]) -> [Int] {
-    let filterWordsIndex = LearedWordsDatabase().filter(words)
-    print(filterWordsIndex)
-    return filterWordsIndex
+  func filter(lemmaedWords: [[Word]], originalWords: [Word]) -> [Int] {
+    let learnedWordsFilterWordsIndex = LearedWordsDatabase().filter(words: lemmaedWords)
+    return Set(learnedWordsFilterWordsIndex).sorted()
   }
 }

@@ -160,7 +160,7 @@ class ResultsFormat {
     func formatSentencesAndPositions(_ words: [[String]], _ positions: [[Quadrilateral]]) -> ([[String]], [[[Quadrilateral]]]) {
       var originalWords: [[String]] = words
       var originalPositions: [[Quadrilateral]] = positions
-      let endSymbols = Set([".", "?", "!", ";"])
+      let endSymbols = Set([".", "?", "!", ";", ".\"", "?\"", "!\"", ";\""])
       var formattedWords: [[String]] = []
       var formattedPositions: [[[Quadrilateral]]] = []
       
@@ -168,10 +168,12 @@ class ResultsFormat {
       var currentSentencePositions: [[Quadrilateral]] = []
       
       func addNewLine() {
-        formattedWords.append(currentSentenceWords)
-        formattedPositions.append(currentSentencePositions)
-        currentSentenceWords.removeAll()
-        currentSentencePositions.removeAll()
+        if currentSentenceWords.count > 1 {
+          formattedWords.append(currentSentenceWords)
+          formattedPositions.append(currentSentencePositions)
+          currentSentenceWords.removeAll()
+          currentSentencePositions.removeAll()
+        }
       }
       
       for lineIndex in 0 ..< originalWords.count {
@@ -195,12 +197,11 @@ class ResultsFormat {
           }
           
           
-          if endSymbols.contains(where: word.hasSuffix) {
+          if endSymbols.contains(where: word.hasSuffix)  {
             if word.hasSuffix(".") {
               if word.filter({ $0 == "." }).count == 1 &&
-                  word.count >= 3 &&
-                  !(word[word.index(word.endIndex, offsetBy: -2)].isLowercase &&
-                    word[word.index(word.endIndex, offsetBy: -3)].isUppercase) {
+                  (word.count >= 3 && !(word[word.index(word.endIndex, offsetBy: -2)].isLowercase && word[word.index(word.endIndex, offsetBy: -3)].isUppercase) ||
+                   word.count == 2 && !(word[word.index(word.endIndex, offsetBy: -2)].isUppercase)) {
                 addNewLine()
               }
             } else {
