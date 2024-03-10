@@ -7,7 +7,6 @@
 
 import SwiftUI
 import AVFoundation
-import UIKit
 
 struct CameraView: View {
   @State var screen = UIScreen.main.bounds
@@ -54,7 +53,20 @@ struct CameraView: View {
             })
           )
       } else {
-        CustomCameraView(image: $image)
+        ZStack(alignment: .center) {
+          CustomCameraView(image: $image)
+          Button(action: {
+            showImagePicker = true
+          }) {
+            Text("library")
+          }
+        }
+        .sheet(isPresented: $showImagePicker,
+               content: {
+            ImagePicker(sourceType: .photoLibrary) { image in
+                self.image = image
+            }
+        })
       }
     }
   }

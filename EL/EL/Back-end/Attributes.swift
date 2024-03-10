@@ -10,14 +10,14 @@ import UIKit
 
 // MARK: - Basic Definitions
 
-struct Quadrilateral {
+struct Quadrilateral: Codable {
   var topLeft: CGPoint
   var topRight: CGPoint
   var bottomRight: CGPoint
   var bottomLeft: CGPoint
 }
 
-enum POSType {
+enum POSType: String, Codable {
   case noun
   case verb
   case adjective
@@ -84,17 +84,25 @@ struct Page {
   
 }
 
-struct PictureShowPage {
+struct PictureShowPage: Codable {
   var texts: [Word]?
   var positions: [[Quadrilateral]]?
   var unknowWordsIndex: [Int]?
   var learningWordsIndex: [Int]?
-  var definitions: [String:(word: String, definitions: [POSType:[String]])]?
+  var definitions: [String:[POSType:[String]]]?
+}
+
+struct BookInfo {
+  var name: String
+  var coverImage: UIImage?
+  var addTime: Date
+  var finalOpenTime: Date
+  var pageNumber: Int
 }
 
 // MARK: - LearedWords Structure
 
-struct Word {
+struct Word: Codable {
   var texts: String
   var pos: POSType
 }

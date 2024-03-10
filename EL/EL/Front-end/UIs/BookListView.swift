@@ -8,13 +8,13 @@
 import SwiftUI
 
 struct BookListView: View {
-  @State var bookList = [String]()
+  @State var bookList = [BookInfo]()
   
   var body: some View {
     VStack(alignment: .center) {
       if bookList.count != 0 {
-        List(bookList, id: \.self) { book in
-          Text(book)
+        List(0..<bookList.count, id: \.self) { i in
+          Text(bookList[i].name)
         }
         Spacer(minLength: 0)
       } else {
@@ -22,12 +22,9 @@ struct BookListView: View {
       }
     }
     .onAppear {
-      BooksDatabase().getAllTablesName() { tables in
+      BooksDatabase().getBooksInfo { tables in
         print(tables)
         bookList = tables
-        if bookList.contains("sqlite_sequence") {
-          bookList.removeAll { $0 == "sqlite_sequence";}
-        }
       }
     }
     .background(Color.gray.opacity(0.1))

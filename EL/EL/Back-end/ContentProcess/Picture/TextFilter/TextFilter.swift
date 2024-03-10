@@ -13,7 +13,7 @@ class TextFilter {
   private let lemmatization = Lemmatization()
   private let LFilter = LearnedWordFilter()
   
-  func textFilter(from page: PageContent ) -> ([Word],[Int],[String:(word: String, definitions: [POSType:[String]])]) {
+  func textFilter(from page: PageContent ) -> ([Word],[Int],[String:[POSType:[String]]]) {
     let startTime = Date()
     
     let pos_tagedStartTime = Date()
@@ -22,15 +22,23 @@ class TextFilter {
     
     let getDefinitionStartTime = Date()
     let definitions = WordsDefinite().definition(pos_taged)
-    let posFixed = pos_tagging.fixPOS(words: pos_taged, definitions: definitions)
     let getDefinitionTime = Date().timeIntervalSince(getDefinitionStartTime)
     
+    let posFixed = pos_tagging.fixPOS(words: pos_taged, definitions: definitions)
+    let upLowCasedWords = posFixed.map{
+      var word = Word(texts: $0.texts, pos: $0.pos)
+      if let texts = definitions[$0.texts.lowercased()]?.word {
+        word.texts = texts
+      }
+      return word
+    }
+    
     let lemmatizationStartTime = Date()
-    let formated = lemmatization.morphy(words: posFixed)
+    let formated = lemmatization.morphy(words: upLowCasedWords)
     let lemmatizationTime = Date().timeIntervalSince(lemmatizationStartTime)
     
     let filterStartTime = Date()
-    let unknowWordsIndex = LFilter.filter(lemmaedWords: formated, originalWords: posFixed)
+    let unknowWordsIndex = LFilter.filter(lemmaedWords: formated, originalWords: upLowCasedWords)
     let filterTime = Date().timeIntervalSince(filterStartTime)
     
     let totalTime = Date().timeIntervalSince(startTime)
@@ -41,8 +49,8 @@ class TextFilter {
     print("Filtering Time: \(filterTime) seconds")
     print("Total Time: \(totalTime) seconds")
     
-    return (posFixed.map{Word(texts: $0.texts.lowercased(), pos: $0.pos)},
+    return (upLowCasedWords,
             unknowWordsIndex,
-            definitions)
+            Dictionary(uniqueKeysWithValues: definitions.map { ($1.word, $1.definitions) }))
   }
 }

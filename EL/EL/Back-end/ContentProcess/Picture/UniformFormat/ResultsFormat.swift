@@ -81,7 +81,7 @@ class ResultsFormat {
                                                         topRight: CGPoint(x: $0.minX * scale, y: $0.minY),
                                                         bottomRight: CGPoint(x: $0.maxX * scale, y: $0.minY), 
                                                         bottomLeft: CGPoint(x: $0.maxX * scale, y: $0.maxY))}
-          } else if abs(midLineFunction.slope) <= 0.002 {
+          } else if abs(midLineFunction.slope) <= 0.02 {
             lineFunctions.append((top: topLineFunction, bottom: bottomLineFunction))
             
             linePositions = lineRects.map{Quadrilateral(topLeft: CGPoint(x: $0.minX * scale, y: $0.minY),

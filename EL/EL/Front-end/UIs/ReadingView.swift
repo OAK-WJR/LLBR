@@ -6,16 +6,18 @@
 //
 
 import SwiftUI
-import Vision
 
 struct ReadingView: View {
   let screen = UIScreen.main.bounds.size
   
-  var bookName: String
-  var pageIndex: Int
+  @Binding var bookName: String
+  @Binding var pageIndex: Int
   
-  var image: UIImage
-  @Binding var pictureShowPage: PictureShowPage
+  @Binding var image: UIImage
+  @Binding var result: PictureShowPage
+  
+  @Binding var showImage: Bool
+  @Binding var showResult: Bool
 
   @State private var showingImage: UIImage?
   @State private var showDefinitionSheet = false
@@ -32,21 +34,6 @@ struct ReadingView: View {
   @State private var previousOffset: CGSize = .zero
   
   @State private var showSheet = false
-  private func pictrueSides(pRS: CGSize, zoom: CGFloat, newOffset: CGSize) -> CGSize {
-    let maxWidthOffset = pRS.width / 2 * (zoom - 1) / zoom
-    let maxHeightOffset = pRS.height / 2 * (zoom - 1) / zoom
-    
-    let newWidth = min(max(newOffset.width, -maxWidthOffset), maxWidthOffset)
-    let newHeight = min(max(newOffset.height, -maxHeightOffset), maxHeightOffset)
-    return CGSize(width: newWidth, height: newHeight)
-  }
-  
-  func distance(_ location: CGPoint, _ previousLocation: CGPoint) -> CGFloat {
-    let xD = location.x - previousLocation.x
-    let yD = location.y - previousLocation.y
-    let distance = sqrt(pow(xD, 2) + pow(yD, 2))
-    return distance
-  }
   
   var body: some View {
     VStack(spacing: 0) {
@@ -54,159 +41,55 @@ struct ReadingView: View {
         self.showSheet = true
       }
       
-      Image(uiImage: showingImage ?? image)
-        .resizable()
-        .aspectRatio(contentMode: .fit)
-        .onAppear {
-          scaleFactor = screen.width / (showingImage ?? image).size.width
-          pictureRealSize = CGSize(width: (showingImage ?? image).size.width * scaleFactor,
-                                   height: (showingImage ?? image).size.height * scaleFactor)
-          zoom = 1.0
-          previousZoom = 1.0
-          offset = CGSize.zero
-          previousOffset = CGSize.zero
-        }
-        .offset(offset)
-        .scaleEffect(zoom)
-        .overlay(
-          GeometryReader { geometry in
-            
-            Color.white.opacity(0.0000001)
-              .onTapGesture(count: 2) { value in
-                let pictureFrame = geometry.frame(in: .local)
-                
-                let tapPosition = CGPoint(x: (pictureFrame.midX * zoom - pictureFrame.midX + value.x) / zoom - offset.width,
-                                          y: (pictureFrame.midY * zoom - pictureFrame.midY + value.y) / zoom - offset.height)
-                
-                if let positions = pictureShowPage.positions {
-                  var minDistance: CGFloat = 999
-                  var minIndex: Int?
-                  
-                  for (index, wordPositions) in positions.enumerated() {
-                    for p in wordPositions {
-                      let centerX = (p.topLeft.x + p.topRight.x + p.bottomLeft.x + p.bottomRight.x) / 4 * geometry.size.height
-                      let centerY = (p.topLeft.y + p.topRight.y + p.bottomLeft.y + p.bottomRight.y) / 4 * geometry.size.height
-                      let distance = sqrt(pow(centerX - tapPosition.x, 2) + pow(centerY - tapPosition.y, 2))
-                      
-                      if distance < minDistance {
-                        minDistance = distance
-                        minIndex = index
-                      }
-                    }
-                  }
-                  
-                  if let closestIndex = minIndex {
-                    if pictureShowPage.unknowWordsIndex!.contains(closestIndex) {
-                      pictureShowPage.unknowWordsIndex!.remove(at: pictureShowPage.unknowWordsIndex!.firstIndex(of: closestIndex)!)
-                      
-                      DispatchQueue.global(qos: .userInitiated).async {
-                        let word = Lemmatization().morphy(words: [pictureShowPage.texts![closestIndex]])
-                        LearedWordsDatabase().add(word)
-                      }
-                    }
-                    
-                    pictureShowPage.unknowWordsIndex!.sort()
-                    showingImage = drawQuadrilateralsOnImage(pageInformation: pictureShowPage, baseImage: image)
-                  }
+      if showImage {
+        Image(uiImage: showResult ? showingImage ?? image : image)
+          .resizable()
+          .aspectRatio(contentMode: .fit)
+          .offset(offset)
+          .scaleEffect(zoom)
+          .overlay(
+            GeometryReader { geometry in
+              
+              Color.white.opacity(0.0000001)
+                .onTapGesture(count: 2) { value in
+                  handleDoubleTapGesture(value: value, geometry: geometry)
                 }
-              }
-              .onTapGesture(count: 1) { value in
-                let pictureFrame = geometry.frame(in: .local)
-                
-                let tapPosition = CGPoint(x: (pictureFrame.midX * zoom - pictureFrame.midX + value.x) / zoom - offset.width,
-                                          y: (pictureFrame.midY * zoom - pictureFrame.midY + value.y) / zoom - offset.height)
-                
-                if let positions = pictureShowPage.positions {
-                  var minDistance: CGFloat = 999
-                  var minIndex: Int?
-                  
-                  for (index, wordPositions) in positions.enumerated() {
-                    for p in wordPositions {
-                      let centerX = (p.topLeft.x + p.topRight.x + p.bottomLeft.x + p.bottomRight.x) / 4 * geometry.size.height
-                      let centerY = (p.topLeft.y + p.topRight.y + p.bottomLeft.y + p.bottomRight.y) / 4 * geometry.size.height
-                      let distance = sqrt(pow(centerX - tapPosition.x, 2) + pow(centerY - tapPosition.y, 2))
-                      
-                      if distance < minDistance {
-                        minDistance = distance
-                        minIndex = index
-                      }
-                    }
-                  }
-                  
-                  if let closestIndex = minIndex {
-                    if !pictureShowPage.unknowWordsIndex!.contains(closestIndex) {
-                      pictureShowPage.unknowWordsIndex!.append(closestIndex)
-                      
-                      DispatchQueue.global(qos: .userInitiated).async {
-                        let word = Lemmatization().morphy(words: [pictureShowPage.texts![closestIndex]])
-                        LearedWordsDatabase().remove([word[0]])
-                      }
-                    }
-                    pictureShowPage.unknowWordsIndex!.sort()
-                    showingImage = drawQuadrilateralsOnImage(pageInformation: pictureShowPage, baseImage: image)
-                    
-                    selectedTabIndex = closestIndex
-                  }
+                .onTapGesture(count: 1) { value in
+                  handleSingleTapGesture(value: value, geometry: geometry)
                 }
-              }
-              .simultaneousGesture(
-                MagnificationGesture(minimumScaleDelta: 0)
-                  .onChanged { value in
-                    let delta = value / previousZoom
-                    previousZoom = value
-                    if zoom * delta >= 1.0 {
-                      zoom *= delta
-                    } else {
-                      zoom = 1.0
-                    }
-                  }
-                  .onEnded { value in
-                    previousZoom = 1.0
-                    withAnimation {
-                      offset = pictrueSides(pRS: pictureRealSize,
-                                            zoom: zoom,
-                                            newOffset: offset)
-                    }
-                  }
-                  .simultaneously(with: DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                      let translation = CGSize(
-                        width: value.translation.width / zoom,
-                        height: value.translation.height / zoom
-                      )
-                      
-                      offset = pictrueSides(pRS: pictureRealSize,
-                                            zoom: zoom,
-                                            newOffset: CGSize(width: previousOffset.width + translation.width,
-                                                              height: previousOffset.height + translation.height))
-                    }
-                    .onEnded { value in
-                      previousOffset = offset
-                    }
-                  )
-              )
+                .simultaneousGesture(
+                  scaleShiftGesture(zoom: $zoom,
+                                    previousZoom: $previousZoom,
+                                    offset: $offset,
+                                    previousOffset: $previousOffset)
+                )
+            }
+          )
+          .mask {
+            Rectangle()
           }
-            .border(.red)
-        )
-        .mask {
-          Rectangle()
-        }
-        .frame(width: pictureRealSize.width)
-        .ignoresSafeArea(.all)
-      
-      Spacer(minLength: 0)
-      
-      TabView(selection: $selectedTabIndex) {
-        ForEach(pictureShowPage.unknowWordsIndex ?? [], id: \.self) { index in
-          WordCardView(pictureShowPage: $pictureShowPage, index: index, bookName: bookName, pageIndex: pageIndex)
-            .tag(index)
+          .frame(width: pictureRealSize.width)
+          .ignoresSafeArea(.all)
+          .onAppear {
+            valueInitialize()
+          }
+        
+        Spacer(minLength: 0)
+        
+        if showResult {
+          TabView(selection: $selectedTabIndex) {
+            ForEach(result.unknowWordsIndex ?? [], id: \.self) { index in
+              WordCardView(result: $result, index: index, bookName: bookName, pageIndex: pageIndex)
+                .tag(index)
+            }
+          }
+          .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+          .frame(height: 90)
+          .onAppear {
+            showingImage = drawQuadrilateralsOnImage(pageInformation: result, baseImage: image)
+          }
         }
       }
-      .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-      .frame(height: 90)
-    }
-    .onAppear {
-      showingImage = drawQuadrilateralsOnImage(pageInformation: pictureShowPage, baseImage: image)
     }
     .sheet(isPresented: $showSheet) {
       WordsSheetView(bookName: bookName)
@@ -215,7 +98,7 @@ struct ReadingView: View {
 }
 
 struct WordCardView: View {
-  @Binding var pictureShowPage: PictureShowPage
+  @Binding var result: PictureShowPage
   var index: Int
   
   var bookName: String
@@ -223,10 +106,10 @@ struct WordCardView: View {
   
   var body: some View {
     HStack(alignment: .top) {
-      if let word = pictureShowPage.texts?[index],
-         let learningWordsIndex = pictureShowPage.learningWordsIndex {
+      if let word = result.texts?[index],
+         let learningWordsIndex = result.learningWordsIndex {
         
-        Text(word.texts.capitalized)
+        Text(word.texts)
           .font(.system(size: 15))
           .fontWeight(.bold)
           .foregroundColor(Color.blue)
@@ -235,7 +118,7 @@ struct WordCardView: View {
         
         ScrollView(.vertical, showsIndicators: false) {
           VStack(alignment: .leading, spacing: 5) {
-            ForEach(pictureShowPage.definitionForWord(at: index), id: \.self) { definition in
+            ForEach(result.definitionForWord(at: index), id: \.self) { definition in
               Text(definition)
                 .font(.system(size: 10))
                 .foregroundColor(.secondary)
@@ -250,12 +133,12 @@ struct WordCardView: View {
           print(learning)
           print(index)
           if learning {
-            pictureShowPage.learningWordsIndex?.remove(at: (pictureShowPage.learningWordsIndex?.firstIndex(of: index))!)
+            result.learningWordsIndex?.remove(at: (result.learningWordsIndex?.firstIndex(of: index))!)
             DispatchQueue.global(qos: .userInitiated).async {
               UnknowWordsDatabase().remove(words: [word.texts])
             }
           } else {
-            pictureShowPage.learningWordsIndex?.append(index)
+            result.learningWordsIndex?.append(index)
             DispatchQueue.global(qos: .userInitiated).async {
               print(word.texts)
               UnknowWordsDatabase().add(words: [word.texts], bookIndex: bookName, pageIndex: pageIndex)
@@ -275,29 +158,21 @@ struct WordCardView: View {
   }
 }
 
-extension PictureShowPage {
-  func definitionForWord(at index: Int) -> [String] {
-    guard let word = texts?[index],
-          let wordData = definitions![word.texts] else {
-      return []
-    }
-    
-    if let posDefinitions = wordData.definitions[word.pos], !posDefinitions.isEmpty {
-      return posDefinitions
-    }
-    
-    return wordData.definitions.values.flatMap { $0 }
-  }
-}
-
 struct WordsSheetView: View {
   var bookName: String
   @State private var words: [String] = []
   
   var body: some View {
     if !words.isEmpty {
-      List(words, id: \.self) { word in
-        Text(word)
+      List {
+        ForEach(0..<words.count, id: \.self) { i in
+          Text(words[i])
+        }
+        .onDelete(perform: { indexs in
+          if let index = indexs.first {
+            UnknowWordsDatabase().remove(words: [words[index]])
+          }
+        })
       }
       .navigationBarTitle("Words", displayMode: .inline)
       .toolbar {
@@ -313,7 +188,156 @@ struct WordsSheetView: View {
   }
 }
 
-func drawQuadrilateralsOnImage(pageInformation: PictureShowPage, baseImage: UIImage) -> UIImage {
+extension ReadingView {
+  private func pictrueSides(pRS: CGSize, zoom: CGFloat, newOffset: CGSize) -> CGSize {
+    let maxWidthOffset = pRS.width / 2 * (zoom - 1) / zoom
+    let maxHeightOffset = pRS.height / 2 * (zoom - 1) / zoom
+    
+    let newWidth = min(max(newOffset.width, -maxWidthOffset), maxWidthOffset)
+    let newHeight = min(max(newOffset.height, -maxHeightOffset), maxHeightOffset)
+    return CGSize(width: newWidth, height: newHeight)
+  }
+  
+  func distance(_ location: CGPoint, _ previousLocation: CGPoint) -> CGFloat {
+    let xD = location.x - previousLocation.x
+    let yD = location.y - previousLocation.y
+    let distance = sqrt(pow(xD, 2) + pow(yD, 2))
+    return distance
+  }
+  
+  private func valueInitialize() {
+    scaleFactor = screen.width / (showingImage ?? image).size.width
+    pictureRealSize = CGSize(width: (showingImage ?? image).size.width * scaleFactor,
+                             height: (showingImage ?? image).size.height * scaleFactor)
+    zoom = 1.0
+    previousZoom = 1.0
+    offset = CGSize.zero
+    previousOffset = CGSize.zero
+  }
+  
+  private func handleDoubleTapGesture(value: CGPoint, geometry: GeometryProxy) {
+    let pictureFrame = geometry.frame(in: .local)
+    
+    let tapPosition = CGPoint(x: (pictureFrame.midX * zoom - pictureFrame.midX + value.x) / zoom - offset.width,
+                              y: (pictureFrame.midY * zoom - pictureFrame.midY + value.y) / zoom - offset.height)
+    
+    if let positions = result.positions {
+      var minDistance: CGFloat = 999
+      var minIndex: Int?
+      
+      for (index, wordPositions) in positions.enumerated() {
+        for p in wordPositions {
+          let centerX = (p.topLeft.x + p.topRight.x + p.bottomLeft.x + p.bottomRight.x) / 4 * geometry.size.height
+          let centerY = (p.topLeft.y + p.topRight.y + p.bottomLeft.y + p.bottomRight.y) / 4 * geometry.size.height
+          let distance = sqrt(pow(centerX - tapPosition.x, 2) + pow(centerY - tapPosition.y, 2))
+          
+          if distance < minDistance {
+            minDistance = distance
+            minIndex = index
+          }
+        }
+      }
+      
+      if let closestIndex = minIndex {
+        if result.unknowWordsIndex!.contains(closestIndex) {
+          result.unknowWordsIndex!.remove(at: result.unknowWordsIndex!.firstIndex(of: closestIndex)!)
+          
+          DispatchQueue.global(qos: .userInitiated).async {
+            let word = Lemmatization().morphy(words: [result.texts![closestIndex]])
+            LearedWordsDatabase().add(word)
+          }
+        }
+        
+        result.unknowWordsIndex!.sort()
+        showingImage = drawQuadrilateralsOnImage(pageInformation: result, baseImage: image)
+      }
+    }
+  }
+  
+  private func handleSingleTapGesture(value: CGPoint, geometry: GeometryProxy) {
+    let pictureFrame = geometry.frame(in: .local)
+    
+    let tapPosition = CGPoint(x: (pictureFrame.midX * zoom - pictureFrame.midX + value.x) / zoom - offset.width,
+                              y: (pictureFrame.midY * zoom - pictureFrame.midY + value.y) / zoom - offset.height)
+    
+    if let positions = result.positions {
+      var minDistance: CGFloat = 999
+      var minIndex: Int?
+      
+      for (index, wordPositions) in positions.enumerated() {
+        for p in wordPositions {
+          let centerX = (p.topLeft.x + p.topRight.x + p.bottomLeft.x + p.bottomRight.x) / 4 * geometry.size.height
+          let centerY = (p.topLeft.y + p.topRight.y + p.bottomLeft.y + p.bottomRight.y) / 4 * geometry.size.height
+          let distance = sqrt(pow(centerX - tapPosition.x, 2) + pow(centerY - tapPosition.y, 2))
+          
+          if distance < minDistance {
+            minDistance = distance
+            minIndex = index
+          }
+        }
+      }
+      
+      if let closestIndex = minIndex {
+        if !result.unknowWordsIndex!.contains(closestIndex) {
+          result.unknowWordsIndex!.append(closestIndex)
+          
+          DispatchQueue.global(qos: .userInitiated).async {
+            let word = Lemmatization().morphy(words: [result.texts![closestIndex]])
+            LearedWordsDatabase().remove([word[0]])
+          }
+        }
+        result.unknowWordsIndex!.sort()
+        showingImage = drawQuadrilateralsOnImage(pageInformation: result, baseImage: image)
+        
+        selectedTabIndex = closestIndex
+      }
+    }
+  }
+  
+  func scaleShiftGesture(zoom: Binding<CGFloat>,
+                         previousZoom: Binding<CGFloat>,
+                         offset: Binding<CGSize>,
+                         previousOffset: Binding<CGSize>) -> some Gesture {
+    
+    let magnificationGesture = MagnificationGesture(minimumScaleDelta: 0)
+      .onChanged { value in
+        let delta = value / previousZoom.wrappedValue
+        previousZoom.wrappedValue = value
+        if zoom.wrappedValue * delta >= 1.0 {
+          zoom.wrappedValue *= delta
+        } else {
+          zoom.wrappedValue = 1.0
+        }
+      }
+      .onEnded { value in
+        previousZoom.wrappedValue = 1.0
+        withAnimation {
+          offset.wrappedValue = pictrueSides(pRS: pictureRealSize,
+                                             zoom: zoom.wrappedValue,
+                                             newOffset: offset.wrappedValue)
+        }
+      }
+    
+    let dragGesture = DragGesture(minimumDistance: 0)
+      .onChanged { value in
+        let translation = CGSize(
+          width: value.translation.width / zoom.wrappedValue,
+          height: value.translation.height / zoom.wrappedValue
+        )
+        offset.wrappedValue = pictrueSides(pRS: pictureRealSize,
+                                           zoom: zoom.wrappedValue,
+                                           newOffset: CGSize(width: previousOffset.wrappedValue.width + translation.width,
+                                                             height: previousOffset.wrappedValue.height + translation.height))
+      }
+      .onEnded { value in
+        previousOffset.wrappedValue = offset.wrappedValue
+      }
+    
+    return magnificationGesture.simultaneously(with: dragGesture)
+  }
+}
+
+private func drawQuadrilateralsOnImage(pageInformation: PictureShowPage, baseImage: UIImage) -> UIImage {
   let renderer = UIGraphicsImageRenderer(size: baseImage.size)
   let renderedImage = renderer.image { context in
     baseImage.draw(at: .zero)
@@ -379,4 +403,19 @@ func drawQuadrilateralsOnImage(pageInformation: PictureShowPage, baseImage: UIIm
     }
   }
   return renderedImage
+}
+
+extension PictureShowPage {
+  func definitionForWord(at index: Int) -> [String] {
+    guard let word = texts?[index],
+          let wordData = definitions![word.texts] else {
+      return []
+    }
+    
+    if let posDefinitions = wordData[word.pos], !posDefinitions.isEmpty {
+      return posDefinitions
+    }
+    
+    return wordData.values.flatMap { $0 }
+  }
 }

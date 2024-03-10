@@ -25,10 +25,11 @@ class BooksDatabase {
   // Initialize the database connection
   init() {
     openDatabase()
-    getAllTablesName() { tables in
-      if !tables.contains("diary") {
+    createIndexTableIfNeeded()
+    getBooksInfo() { tables in
+      if !tables.map({$0.name}).contains("diary") {
         print("Need to create 'diary' database")
-        self.createDiaryTableIfNeeded()
+        self.createTable(named: "diary")
       }
     }
   }
@@ -48,17 +49,15 @@ class BooksDatabase {
     print("Successfully opened connection to database")
   }
 
-  func createDiaryTableIfNeeded() {
+  func createIndexTableIfNeeded() {
     let createTableString = """
-    CREATE TABLE IF NOT EXISTS diary(
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    EntryDate DATETIME,
-    Type TEXT,
-    Original BLOB,
-    Crop TEXT,
-    Words TEXT,
-    Positions TEXT,
-    Pointer TEXT);
+    CREATE TABLE IF NOT EXISTS Index(
+        name TEXT PRIMARY KEY NOT NULL,
+        coverImage BLOB,
+        addTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+        finalChangeTime DATETIME,
+        pageNumber INTEGER
+    );
     """
 
     var createTableStatement: OpaquePointer?
@@ -74,10 +73,13 @@ class BooksDatabase {
 
   // MARK: - Top-level functions - General operations
   func addOperation(_ data: Any, in tableName: String, completion: @escaping (sqlite3_int64) -> Void) {
+    updateFinalChangeTime(named: tableName)
+    updatePageNumber(named: tableName, change: "+")
     completion(addOriginal(original: data, to: tableName))
   }
   
   func changeOperation(_ elementType: ElementType, _ newData: Any, at index: Int, from tableName: String) {
+    updateFinalChangeTime(named: tableName)
     switch elementType {
     case .original:
       changeOriginal(at: index, newOriginal: newData as! PageContent, in: tableName)
@@ -89,6 +91,8 @@ class BooksDatabase {
   }
   
   func deleteOperation(_ elementType: ElementType, at index: Int, from tableName: String) {
+    updateFinalChangeTime(named: tableName)
+    updatePageNumber(named: tableName, change: "-")
     switch elementType {
     case .original:
       deleteOriginal(at: index, from: tableName)
@@ -112,47 +116,215 @@ class BooksDatabase {
   
   // MARK: - Top-level functions - Table operations
 
-  // 1.1 Create a new table
+  // 1.1 Create a new table and update the index table
   func createTable(named tableName: String) {
-    // Execute the SQL statement to create a new table
+    // First, try to create the new table
     let createTableString = """
-    CREATE TABLE \(tableName) (
-      ID INTEGER PRIMARY KEY,
-      Type TEXT,
-      Original BLOB,
-      Crop TEXT,
-      Words TEXT,
-      Positions TEXT
-      Pointer TEXT
-    );
-    """
-    // Run the SQL to create the table here
+      CREATE TABLE IF NOT EXISTS \(tableName) (
+        ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        EntryDate DATETIME,
+        Type TEXT,
+        Original BLOB,
+        Crop TEXT,
+        Words TEXT,
+        Positions TEXT,
+        Pointer TEXT
+      );
+      """
+    var createTableStatement: OpaquePointer?
+    if sqlite3_prepare_v2(db, createTableString, -1, &createTableStatement, nil) == SQLITE_OK {
+      if sqlite3_step(createTableStatement) == SQLITE_DONE {
+        print("\(tableName) table successfully created.")
+        
+        updateIndexTable(with: tableName)
+      } else {
+        print("\(tableName) table could not be created.")
+      }
+    } else {
+      print("CREATE TABLE statement could not be prepared.")
+    }
+    sqlite3_finalize(createTableStatement)
   }
 
-  // 1.2 Rename a table
+  private func updateIndexTable(with tableName: String) {
+    let insertIndexString = """
+      INSERT INTO IndexTable (name, addTime, finalChangeTime, pageNumber) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0);
+      """
+    var insertIndexStatement: OpaquePointer?
+    
+    if sqlite3_prepare_v2(db, insertIndexString, -1, &insertIndexStatement, nil) == SQLITE_OK {
+      sqlite3_bind_text(insertIndexStatement, 1, (tableName as NSString).utf8String, -1, nil)
+      
+      if sqlite3_step(insertIndexStatement) == SQLITE_DONE {
+        print("Successfully inserted \(tableName) into IndexTable.")
+      } else {
+        print("Could not insert \(tableName) into IndexTable.")
+      }
+    } else {
+      print("INSERT INTO IndexTable statement could not be prepared.")
+    }
+    sqlite3_finalize(insertIndexStatement)
+  }
+
+  // 1.2 Rename a table and update the index table
   func changeTableName(from oldTableName: String, to newTableName: String) {
-    // Execute the SQL statement to rename a table
+    // Prepare the SQL statement to rename a table
     let renameTableString = "ALTER TABLE \(oldTableName) RENAME TO \(newTableName);"
-    // Run the SQL to rename the table here
+    var renameTableStatement: OpaquePointer?
+    if sqlite3_prepare_v2(db, renameTableString, -1, &renameTableStatement, nil) == SQLITE_OK {
+      if sqlite3_step(renameTableStatement) == SQLITE_DONE {
+        print("Table \(oldTableName) successfully renamed to \(newTableName).")
+        
+        updateIndexTableForRename(from: oldTableName, to: newTableName)
+      } else {
+        print("Could not rename table \(oldTableName) to \(newTableName).")
+      }
+    } else {
+      print("ALTER TABLE statement could not be prepared.")
+    }
+    sqlite3_finalize(renameTableStatement)
   }
 
-  // 1.3 Delete a table
+  private func updateIndexTableForRename(from oldTableName: String, to newTableName: String) {
+    let updateIndexString = """
+      UPDATE IndexTable SET name = ?, finalChangeTime = CURRENT_TIMESTAMP WHERE name = ?;
+      """
+    var updateIndexStatement: OpaquePointer?
+    if sqlite3_prepare_v2(db, updateIndexString, -1, &updateIndexStatement, nil) == SQLITE_OK {
+      sqlite3_bind_text(updateIndexStatement, 1, (newTableName as NSString).utf8String, -1, nil)
+      sqlite3_bind_text(updateIndexStatement, 2, (oldTableName as NSString).utf8String, -1, nil)
+      
+      if sqlite3_step(updateIndexStatement) == SQLITE_DONE {
+        print("IndexTable successfully updated for \(oldTableName) to \(newTableName).")
+      } else {
+        print("Could not update IndexTable for \(oldTableName) to \(newTableName).")
+      }
+    } else {
+      print("UPDATE IndexTable statement could not be prepared.")
+    }
+    sqlite3_finalize(updateIndexStatement)
+  }
+
+  // 1.3 Delete a table and update the index table
   func deleteTable(named tableName: String) {
-    // Execute the SQL statement to delete a table
+    // Prepare the SQL statement to delete a table
     let deleteTableString = "DROP TABLE IF EXISTS \(tableName);"
-    // Run the SQL to delete the table here
+    var deleteTableStatement: OpaquePointer?
+    
+    if sqlite3_prepare_v2(db, deleteTableString, -1, &deleteTableStatement, nil) == SQLITE_OK {
+      if sqlite3_step(deleteTableStatement) == SQLITE_DONE {
+        print("Table \(tableName) successfully deleted.")
+        
+        removeFromIndexTable(tableName: tableName)
+      } else {
+        print("Could not delete table \(tableName).")
+      }
+    } else {
+      print("DROP TABLE statement could not be prepared.")
+    }
+    sqlite3_finalize(deleteTableStatement)
+  }
+
+  private func removeFromIndexTable(tableName: String) {
+    let removeFromIndexString = "DELETE FROM IndexTable WHERE name = ?;"
+    var removeFromIndexStatement: OpaquePointer?
+    
+    if sqlite3_prepare_v2(db, removeFromIndexString, -1, &removeFromIndexStatement, nil) == SQLITE_OK {
+      // Bind the table name to the SQL statement
+      sqlite3_bind_text(removeFromIndexStatement, 1, (tableName as NSString).utf8String, -1, nil)
+      
+      if sqlite3_step(removeFromIndexStatement) == SQLITE_DONE {
+        print("Record for \(tableName) successfully removed from IndexTable.")
+      } else {
+        print("Could not remove record for \(tableName) from IndexTable.")
+      }
+    } else {
+      print("DELETE FROM IndexTable statement could not be prepared.")
+    }
+    sqlite3_finalize(removeFromIndexStatement)
   }
   
-  // 1.4 List table names
-  func getAllTablesName(completion: @escaping ([String]) -> Void) {
-    let queryString = "SELECT name FROM sqlite_master WHERE type='table';"
+  // 1.4 Update the cover
+  func addOrUpdateCoverForTable(named tableName: String, coverImage: UIImage) {
+    // Convert UIImage to Data
+    guard let imageData = coverImage.pngData() else {
+      print("Error converting image to PNG data")
+      return
+    }
+    
+    // Check whether a cover record already exists
+    let checkExistenceString = "SELECT EXISTS(SELECT 1 FROM IndexTable WHERE name = ? LIMIT 1);"
+    var checkExistenceStatement: OpaquePointer?
+    
+    if sqlite3_prepare_v2(db, checkExistenceString, -1, &checkExistenceStatement, nil) == SQLITE_OK {
+      sqlite3_bind_text(checkExistenceStatement, 1, (tableName as NSString).utf8String, -1, nil)
+      
+      var exists: Bool = false
+      if sqlite3_step(checkExistenceStatement) == SQLITE_ROW {
+        exists = sqlite3_column_int(checkExistenceStatement, 0) != 0
+      }
+      sqlite3_finalize(checkExistenceStatement)
+      
+      if exists {
+        let updateCoverString = "UPDATE IndexTable SET coverImage = ?, finalChangeTime = CURRENT_TIMESTAMP WHERE name = ?;"
+        var updateCoverStatement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, updateCoverString, -1, &updateCoverStatement, nil) == SQLITE_OK {
+          sqlite3_bind_blob(updateCoverStatement, 1, (imageData as NSData).bytes, Int32(imageData.count), nil)
+          sqlite3_bind_text(updateCoverStatement, 2, (tableName as NSString).utf8String, -1, nil)
+          
+          if sqlite3_step(updateCoverStatement) == SQLITE_DONE {
+            print("Successfully updated cover for \(tableName).")
+          } else {
+            print("Could not update cover for \(tableName).")
+          }
+          sqlite3_finalize(updateCoverStatement)
+        }
+      } else {
+        let insertCoverString = "INSERT INTO IndexTable (name, coverImage, addTime, finalChangeTime, pageNumber) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0);"
+        var insertCoverStatement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, insertCoverString, -1, &insertCoverStatement, nil) == SQLITE_OK {
+          sqlite3_bind_text(insertCoverStatement, 1, (tableName as NSString).utf8String, -1, nil)
+          sqlite3_bind_blob(insertCoverStatement, 2, (imageData as NSData).bytes, Int32(imageData.count), nil)
+          
+          if sqlite3_step(insertCoverStatement) == SQLITE_DONE {
+            print("Successfully added cover for \(tableName).")
+          } else {
+            print("Could not add cover for \(tableName).")
+          }
+          sqlite3_finalize(insertCoverStatement)
+        }
+      }
+    } else {
+      print("CHECK EXISTENCE statement could not be prepared.")
+    }
+  }
+
+  // 1.5 Read the Index table to get the basic data of all other tables
+  func getBooksInfo(completion: @escaping ([BookInfo]) -> Void) {
+    let queryString = "SELECT name, coverImage, addTime, finalChangeTime, pageNumber FROM IndexTable;"
     var statement: OpaquePointer?
-    var tables = [String]()
+    var bookCovers = [BookInfo]()
     
     if sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK {
       while sqlite3_step(statement) == SQLITE_ROW {
-        let tableName = String(cString: sqlite3_column_text(statement, 0))
-        tables.append(tableName)
+        let name = String(cString: sqlite3_column_text(statement, 0))
+        
+        let coverImageData = sqlite3_column_blob(statement, 1)
+        let coverImageSize = sqlite3_column_bytes(statement, 1)
+        let coverImage: UIImage? = coverImageData != nil ? UIImage(data: Data(bytes: coverImageData!, count: Int(coverImageSize))) : nil
+        
+        let addTimeString = String(cString: sqlite3_column_text(statement, 2))
+        let finalOpenTimeString = String(cString: sqlite3_column_text(statement, 3))
+        let pageNumber = Int(sqlite3_column_int(statement, 4))
+        
+        let dateFormatter = ISO8601DateFormatter()
+        let addTime = dateFormatter.date(from: addTimeString) ?? Date()
+        let finalOpenTime = dateFormatter.date(from: finalOpenTimeString) ?? Date()
+        
+        let bookCover = BookInfo(name: name, coverImage: coverImage, addTime: addTime, finalOpenTime: finalOpenTime, pageNumber: pageNumber)
+        bookCovers.append(bookCover)
       }
       sqlite3_finalize(statement)
     } else {
@@ -160,10 +332,62 @@ class BooksDatabase {
         print("Error preparing select: \(error)")
       }
     }
-    completion(tables)
+    completion(bookCovers)
   }
   
-  // 1.5 List all indexes
+  // 1.6 Update the last-modified time
+  func updateFinalChangeTime(named tableName: String) {
+    let updateString = """
+      UPDATE IndexTable SET finalChangeTime = CURRENT_TIMESTAMP WHERE name = ?;
+      """
+    var updateStatement: OpaquePointer?
+    
+    if sqlite3_prepare_v2(db, updateString, -1, &updateStatement, nil) == SQLITE_OK {
+      sqlite3_bind_text(updateStatement, 1, (tableName as NSString).utf8String, -1, nil)
+      
+      if sqlite3_step(updateStatement) == SQLITE_DONE {
+        print("Successfully updated final change time for \(tableName).")
+      } else {
+        print("Could not update final change time for \(tableName).")
+      }
+    } else {
+      print("UPDATE statement could not be prepared.")
+    }
+    sqlite3_finalize(updateStatement)
+  }
+
+  // 1.7 Update the page count
+  func updatePageNumber(named tableName: String, change: String) {
+    var updateString = String()
+    
+    if change == "+" {
+      updateString = "UPDATE IndexTable SET pageNumber = pageNumber + 1 WHERE name = ?;"
+    } else if change == "-" {
+      updateString = "UPDATE IndexTable SET pageNumber = GREATEST(0, pageNumber - 1) WHERE name = ?;"
+    }
+    
+    var updateStatement: OpaquePointer?
+    
+    if sqlite3_prepare_v2(db, updateString, -1, &updateStatement, nil) == SQLITE_OK {
+      sqlite3_bind_text(updateStatement, 1, (tableName as NSString).utf8String, -1, nil)
+      
+      if sqlite3_step(updateStatement) == SQLITE_DONE {
+        if change == "+" {
+          print("Successfully incremented page number for \(tableName).")
+        } else if change == "-" {
+          print("Successfully decremented page number for \(tableName), ensuring it does not go below 0.")
+        }
+      } else {
+        print("Could not update page number for \(tableName).")
+      }
+    } else {
+      print("UPDATE statement could not be prepared.")
+    }
+    sqlite3_finalize(updateStatement)
+  }
+
+  
+  // 1.8 List all indexes of a Book table
   func getAllIds(from tableName: String) -> [Int] {
     var ids = [Int]()
     let queryString = "SELECT ID FROM \(tableName);"
@@ -193,22 +417,14 @@ class BooksDatabase {
         print("Failed to process original data")
         return -1
     }
-    let queryString: String
-    if tableName.lowercased() == "diary" {
-        queryString = "INSERT INTO \(tableName) (EntryDate, Type, Original) VALUES (datetime('now', 'localtime'), ?, ?);"
-    } else {
-        queryString = "INSERT INTO \(tableName) (Type, Original) VALUES (?, ?);"
-    }
+    let queryString = "INSERT INTO \(tableName) (EntryDate, Type, Original) VALUES (datetime('now', 'localtime'), ?, ?);"
     
     var statement: OpaquePointer?
     if sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK {
-        if tableName.lowercased() == "diary" {
-            sqlite3_bind_text(statement, 1, (type as NSString).utf8String, -1, nil)
-            sqlite3_bind_blob(statement, 2, (originalData as NSData).bytes, Int32(originalData.count), nil)
-        } else {
-            sqlite3_bind_text(statement, 1, (type as NSString).utf8String, -1, nil)
-            sqlite3_bind_blob(statement, 2, (originalData as NSData).bytes, Int32(originalData.count), nil)
-        }
+      
+        sqlite3_bind_text(statement, 1, (type as NSString).utf8String, -1, nil)
+        sqlite3_bind_blob(statement, 2, (originalData as NSData).bytes, Int32(originalData.count), nil)
+      
         if sqlite3_step(statement) == SQLITE_DONE {
             print("Successfully inserted row.")
         } else {
@@ -455,8 +671,7 @@ class BooksDatabase {
   
   //MARK: - Close database connection
   deinit {
-      // Close the database connection here
-      // e.g. sqlite3_close(db)
+    sqlite3_close(db)
   }
   
   //MARK: - Utilities

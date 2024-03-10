@@ -43,7 +43,7 @@ class POS_Tagging {
           } else {
             let wordsPOS = Set(["Noun", "Verb", "Adjective", "Adverb", "Pronoun", "Determiner", "OtherWord", "Particle", "Preposition", "Conjunction", "Interjection", "Classifier", "Idiom", "WordJoiner", "OtherPunctuation", "Dash"])
             if wordsPOS.contains(tag) {
-              let specificWords = ["\'s", "\'re", "\'ll", "\'m", "\'t", "n\'t"]
+              let specificWords = ["\'s", "\'re", "\'ll", "\'m", "\'t", "n\'t", "\'d"]
               let originalWord = String(sentence[tokenRange])
               if !specificWords.contains(originalWord) {
                 allWords[allWords.count - 1].texts += originalWord
