@@ -55,7 +55,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		3414C6A22AFDA3180085ABAB /* EL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EL.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3414C6A22AFDA3180085ABAB /* LLBR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LLBR.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3414C6A52AFDA3180085ABAB /* ELApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELApp.swift; sourceTree = "<group>"; };
 		3414C6A72AFDA3180085ABAB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3414C6A92AFDA31B0085ABAB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -118,7 +118,7 @@
 		3414C6992AFDA3180085ABAB = {
 			isa = PBXGroup;
 			children = (
-				3414C6A42AFDA3180085ABAB /* EL */,
+				3414C6A42AFDA3180085ABAB /* LLBR */,
 				3414C6A32AFDA3180085ABAB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -126,12 +126,12 @@
 		3414C6A32AFDA3180085ABAB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				3414C6A22AFDA3180085ABAB /* EL.app */,
+				3414C6A22AFDA3180085ABAB /* LLBR.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		3414C6A42AFDA3180085ABAB /* EL */ = {
+		3414C6A42AFDA3180085ABAB /* LLBR */ = {
 			isa = PBXGroup;
 			children = (
 				347D07A22B0F0DA3007CA826 /* Info.plist */,
@@ -142,7 +142,7 @@
 				3414C6A92AFDA31B0085ABAB /* Assets.xcassets */,
 				3414C6AB2AFDA31B0085ABAB /* Preview Content */,
 			);
-			path = EL;
+			path = LLBR;
 			sourceTree = "<group>";
 		};
 		3414C6AB2AFDA31B0085ABAB /* Preview Content */ = {
@@ -332,9 +332,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		3414C6A12AFDA3180085ABAB /* EL */ = {
+		3414C6A12AFDA3180085ABAB /* LLBR */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3414C6B02AFDA31B0085ABAB /* Build configuration list for PBXNativeTarget "EL" */;
+			buildConfigurationList = 3414C6B02AFDA31B0085ABAB /* Build configuration list for PBXNativeTarget "LLBR" */;
 			buildPhases = (
 				3414C69E2AFDA3180085ABAB /* Sources */,
 				3414C69F2AFDA3180085ABAB /* Frameworks */,
@@ -344,9 +344,9 @@
 			);
 			dependencies = (
 			);
-			name = EL;
-			productName = EL;
-			productReference = 3414C6A22AFDA3180085ABAB /* EL.app */;
+			name = LLBR;
+			productName = LLBR;
+			productReference = 3414C6A22AFDA3180085ABAB /* LLBR.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -364,7 +364,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 3414C69D2AFDA3180085ABAB /* Build configuration list for PBXProject "ELBR" */;
+			buildConfigurationList = 3414C69D2AFDA3180085ABAB /* Build configuration list for PBXProject "LLBR" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -377,7 +377,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				3414C6A12AFDA3180085ABAB /* EL */,
+				3414C6A12AFDA3180085ABAB /* LLBR */,
 			);
 		};
 /* End PBXProject section */
@@ -574,11 +574,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"EL/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"LLBR/Preview Content\"";
 				DEVELOPMENT_TEAM = MD2AX9P6F2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = EL/Info.plist;
+				INFOPLIST_FILE = LLBR/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Language Network: Book Reader";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_NSCameraUsageDescription = "";
@@ -594,7 +594,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.WuJiaRui.ELBR;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WuJiaRui.LLBR;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -609,11 +609,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"EL/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"LLBR/Preview Content\"";
 				DEVELOPMENT_TEAM = MD2AX9P6F2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = EL/Info.plist;
+				INFOPLIST_FILE = LLBR/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Language Network: Book Reader";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_NSCameraUsageDescription = "";
@@ -629,7 +629,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.WuJiaRui.ELBR;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WuJiaRui.LLBR;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -640,7 +640,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		3414C69D2AFDA3180085ABAB /* Build configuration list for PBXProject "ELBR" */ = {
+		3414C69D2AFDA3180085ABAB /* Build configuration list for PBXProject "LLBR" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3414C6AE2AFDA31B0085ABAB /* Debug */,
@@ -649,7 +649,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		3414C6B02AFDA31B0085ABAB /* Build configuration list for PBXNativeTarget "EL" */ = {
+		3414C6B02AFDA31B0085ABAB /* Build configuration list for PBXNativeTarget "LLBR" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3414C6B12AFDA31B0085ABAB /* Debug */,
