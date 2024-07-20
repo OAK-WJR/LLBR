@@ -9,6 +9,7 @@ import SwiftUI
 import AVFoundation
 
 struct CustomCameraView: View {
+  @Binding var mainContent: ViewContent
   @Binding var viewContent: BookEditContent
   
   @State var image: UIImage?
@@ -17,7 +18,8 @@ struct CustomCameraView: View {
   @State var showPicture: Bool = false
   
   @State var trashImage: Bool = false
-  @State var showTrash: Bool = false
+  
+  @EnvironmentObject var CL: RE_ContentLoader
   var body: some View {
     ZStack(alignment: .center) {
       
@@ -28,11 +30,25 @@ struct CustomCameraView: View {
           if direction == .left {
             if let image = image {
               DispatchQueue.global(qos: .userInitiated).async {
-                EditResourceDatabase().insertImage(image: image)
+                EditResourceDatabase().insertImage(image: image, atIndex: -1) {
+                  CL.load()
+                  self.image = nil
+                  withAnimation {
+                    viewContent = .edit
+                  }
+                }
+              }
+            } else {
+              CL.load()
+              if !CL.ids.isEmpty {
+                withAnimation {
+                  viewContent = .edit
+                }
               }
             }
+          } else if direction == .right {
             withAnimation {
-              viewContent = .edit
+              mainContent = .reading(.bookContent(.readPage))
             }
           }
         }
@@ -41,7 +57,7 @@ struct CustomCameraView: View {
         VStack {
           Spacer()
           HStack {
-            ZStack {
+            VStack {
               if !trashImage {
                 Image(uiImage: image)
                   .resizable()
@@ -60,47 +76,20 @@ struct CustomCameraView: View {
                       .opacity(showPicture ? 0.7 : 0)
                   )
                   .padding([.leading, .trailing], showPicture ? 10 : 0)
-              }
-              
-              if showTrash {
-                Image(systemName: "trash")
-                  .foregroundStyle(.red)
-                  .frame(width: 20, height: 20)
-                  .transition(.asymmetric(
-                    insertion: .scale,
-                    removal: .move(edge: .bottom)
-                  ))
-                  .padding(30)
+                  .onSwipeGesture { direction in
+                    if direction == .down {
+                      withAnimation {
+                        trashImage = true
+                      }
+                    }
+                  }
               }
             }
             Spacer()
           }
-          .background(Color.white.opacity(0.001))
-          .onSwipeGesture { direction in
-            print(direction)
-            if direction == .down {
-              withAnimation {
-                showTrash = true
-              }
-              withAnimation(.easeInOut(duration: 1.0)) {
-                trashImage = true
-              }
-              DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                withAnimation {
-                  showTrash = false
-                }
-              }
-            } else if direction == .left {
-              DispatchQueue.global(qos: .userInitiated).async {
-                EditResourceDatabase().insertImage(image: image)
-              }
-              viewContent = .edit
-            }
-          }
         }
         .onAppear {
           trashImage = false
-          showTrash = false
           showPicture = false
           withAnimation(.easeInOut(duration: 0.3)) {
             showPicture = true
@@ -114,7 +103,7 @@ struct CustomCameraView: View {
           Button(action: {
             if let image = image {
               DispatchQueue.global(qos: .userInitiated).async {
-                EditResourceDatabase().insertImage(image: image)
+                EditResourceDatabase().insertImage(image: image, atIndex: -1) {}
               }
             }
             image = nil
@@ -163,19 +152,16 @@ struct CustomCameraRepresentable: UIViewControllerRepresentable {
     }
     
     func cropImageToScreenSize(image: UIImage) -> UIImage? {
-      // Screen size and aspect ratio
       let screenSize = UIScreen.main.bounds.size
       let screenAspectRatio = screenSize.width / screenSize.height
       
-      // Original image size
-      let originalSize = image.size
-      let originalWidth = originalSize.height * screenAspectRatio
+      let imageSize = image.size
+      let realScreenSize = CGSize(width: imageSize.height * screenAspectRatio, height: imageSize.height)
+      let scale = realScreenSize.width / imageSize.width
       
-      let cropRect = CGRect(x: 0, y: (originalSize.width - originalWidth) / 2, width: originalSize.height, height: originalWidth)
-      
-      // Crop with CGImage
-      guard let cgImage = image.cgImage?.cropping(to: cropRect) else { return nil }
-      let croppedImage = UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
+      let targetSize = CGSize(width: imageSize.width * scale, height: imageSize.height)
+      print(targetSize)
+      let croppedImage = image.centerCropped(to: targetSize)
       
       return croppedImage
     }
@@ -185,8 +171,11 @@ struct CustomCameraRepresentable: UIViewControllerRepresentable {
       parent.didTapCapture = false
       
       if let imageData = photo.fileDataRepresentation() {
-        let croppedImage = cropImageToScreenSize(image: UIImage(data: imageData)!)
-        parent.image = croppedImage
+        if let image = UIImage(data: imageData) {
+          let croppedImage = cropImageToScreenSize(image: image)
+          let fixedImage = croppedImage!.fixOrientation()
+          parent.image = fixedImage
+        }
       }
       parent.presentationMode.wrappedValue.dismiss()
     }
@@ -276,5 +265,21 @@ class CustomCameraController: UIViewController {
     DispatchQueue.global(qos: .userInitiated).async {
       self.captureSession.startRunning()
     }
+  }
+}
+
+extension UIImage {
+  func centerCropped(to newSize: CGSize) -> UIImage? {
+    guard let cgImage = self.cgImage else { return nil }
+    
+    let contextSize = self.size
+    
+    let posX = (contextSize.width - newSize.width) / 2.0
+    let posY = (contextSize.height - newSize.height) / 2.0
+    let rect = CGRect(x: posY, y: posX, width: newSize.height, height: newSize.width)
+    
+    guard let croppedCGImage = cgImage.cropping(to: rect) else { return nil }
+    
+    return UIImage(cgImage: croppedCGImage, scale: scale, orientation: imageOrientation)
   }
 }

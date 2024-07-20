@@ -86,18 +86,22 @@ class ImageProcessing {
   }
   
   func drawQuadrilateralsOnImage(pageInformation: RPInfoContent, baseImage: UIImage) -> UIImage {
+    print(baseImage.size)
     let renderer = UIGraphicsImageRenderer(size: baseImage.size)
     let renderedImage = renderer.image { context in
       baseImage.draw(at: .zero)
       
       let strokeColor = UIColor.red
+      let lineWidth: CGFloat = 1.5
       
-      if let positions = pageInformation.positions {
+      if let positions = pageInformation.positions,
+         positions != [] {
         let unknowWordsIndex = pageInformation.unknownWordsIndex!
         for (index, wordQuadrilaterals) in positions.enumerated() {
           if unknowWordsIndex.contains(index) {
             if wordQuadrilaterals.count == 1 {
               let path = UIBezierPath()
+              path.lineWidth = lineWidth
               path.move(to: CGPoint(x: wordQuadrilaterals[0].topLeft.x * baseImage.size.width,
                                     y: wordQuadrilaterals[0].topLeft.y * baseImage.size.height))
               path.addLine(to: CGPoint(x: wordQuadrilaterals[0].topRight.x * baseImage.size.width,
@@ -113,6 +117,7 @@ class ImageProcessing {
             } else {
               for (partIndex, quadrilateral) in wordQuadrilaterals.enumerated() {
                 let path = UIBezierPath()
+                path.lineWidth = lineWidth
                 if partIndex == 0 {
                   path.move(to: CGPoint(x: quadrilateral.topRight.x * baseImage.size.width,
                                         y: quadrilateral.topRight.y * baseImage.size.height))
@@ -137,7 +142,7 @@ class ImageProcessing {
                   path.addLine(to: CGPoint(x: wordQuadrilaterals[partIndex + 1].topLeft.x * baseImage.size.width,
                                            y: wordQuadrilaterals[partIndex + 1].topLeft.y * baseImage.size.height))
                   path.move(to: CGPoint(x: wordQuadrilaterals[partIndex - 1].bottomLeft.x * baseImage.size.width,
-                                           y: wordQuadrilaterals[partIndex - 1].bottomLeft.y * baseImage.size.height))
+                                        y: wordQuadrilaterals[partIndex - 1].bottomLeft.y * baseImage.size.height))
                   path.addLine(to: CGPoint(x: wordQuadrilaterals[partIndex + 1].bottomRight.x * baseImage.size.width,
                                            y: wordQuadrilaterals[partIndex + 1].bottomRight.y * baseImage.size.height))
                 }

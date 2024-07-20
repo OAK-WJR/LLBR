@@ -31,7 +31,7 @@ class BooksDatabase {
         print("Need to create 'diary' database")
         self.createTable(named: "diary")
         
-//        for i in 0...287 {
+//        for i in 0...5 {
 //          guard let path = Bundle.main.path(forResource: String(i), ofType: "jpg") else { return }
 //          if let image = UIImage(contentsOfFile: path) {
 //            self.addOriginal(original: image, to: "diary")
@@ -129,6 +129,7 @@ class BooksDatabase {
     let createTableString = """
       CREATE TABLE IF NOT EXISTS \(tableName) (
         ID INTEGER PRIMARY KEY AUTOINCREMENT,
+      
         EntryDate DATETIME,
         Type TEXT,
         Original BLOB,

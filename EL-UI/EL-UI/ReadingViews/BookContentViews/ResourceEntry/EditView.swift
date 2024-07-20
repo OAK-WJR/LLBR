@@ -169,57 +169,206 @@ class RE_ContentLoader: ObservableObject {
 
 import SwiftUI
 
+enum TurnDiection {
+  case left
+  case right
+}
+
 struct ResourceEditView: View {
-  @StateObject var CL = RE_ContentLoader()
-  @State var selectedIndex: Int = Int()
+  @Binding var bookName: String
+  @Binding var mainContent: ViewContent
+  @Binding var viewContent: BookEditContent
+  @EnvironmentObject var CL: RE_ContentLoader
+  @State var selectedIndex: Int = 0
+  @State var turnDiection: TurnDiection = .right
+  
+  @State var startSetting: Bool = false
+  @State var previousFingerOffset: Double = 0
+  @State var fingerOffset: Double = 0
   
   var body: some View {
     ZStack {
       if !CL.ids.isEmpty {
-        if let index = CL.contents.firstIndex(where: {$0.id == CL.ids[selectedIndex]}), let image = CL.contents[index].image {
-          Image(uiImage: image)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(height: UIScreen.main.bounds.height)
-            .transition(.asymmetric(
-              insertion: .move(edge: .trailing),
-              removal: .move(edge: .leading)
-            ))
-            .onSwipeGesture { direction in
-              if direction == .left {
-                withAnimation {
-                  selectedIndex = min(selectedIndex + 1, CL.ids.count-1)
-                }
-                
-                let loadIndexes = (-1...1).map{selectedIndex + $0}.filter({$0>=0 && $0<=CL.ids.count-1})
-                CL.upDateContents(indexes: loadIndexes)
-                
-                print(selectedIndex)
-              } else if direction == .right {
-                withAnimation {
-                  selectedIndex = max(0, selectedIndex - 1)
-                }
-                
-                let loadIndexes = (-1...1).map{selectedIndex + $0}.filter({$0>=0 && $0<=CL.ids.count-1})
-                print(loadIndexes)
-                CL.upDateContents(indexes: loadIndexes)
-                
-                print(selectedIndex)
+        if let index = CL.contents.firstIndex(where: {$0.id == CL.ids[selectedIndex]}), 
+            let image = CL.contents[index].image {
+          
+          Group {
+            Color.black
+            Image(uiImage: image)
+              .resizable()
+              .aspectRatio(contentMode: .fit)
+              .transition(.opacity)
+              .id(selectedIndex)
+          }
+          .onSwipeGesture { direction in
+            if direction == .left {
+              turnDiection = .right
+              withAnimation {
+                selectedIndex = min(selectedIndex + 1, CL.ids.count-1)
               }
               
+              let loadIndexes = (-1...1).map{selectedIndex + $0}.filter({$0>=0 && $0<=CL.ids.count-1})
+              CL.upDateContents(indexes: loadIndexes)
+              
+              print(selectedIndex)
+            } else if direction == .right {
+              turnDiection = .left
+              withAnimation {
+                selectedIndex = max(0, selectedIndex - 1)
+              }
+              
+              let loadIndexes = (-1...1).map{selectedIndex + $0}.filter({$0>=0 && $0<=CL.ids.count-1})
+              print(loadIndexes)
+              CL.upDateContents(indexes: loadIndexes)
+              
+              print(selectedIndex)
             }
+
+          }
         }
       } else {
-        LoadingView()
-          .onAppear {
-            CL.ids = EditResourceDatabase().fetchSortedIds()
-            print(CL.ids)
-            self.selectedIndex = 0
-            let loadIndexes = (-1...1).map{selectedIndex + $0}.filter({$0>=0 && $0<=CL.ids.count-1})
-            print(loadIndexes)
-            CL.upDateContents(indexes: loadIndexes)
-            
+        Color.black.ignoresSafeArea()
+      }
+
+      VStack {
+        HStack {
+          Button(action: {
+            withAnimation {
+              viewContent = .entry
+            }
+          }) {
+            Image(systemName: "camera")
+              .resizable()
+              .aspectRatio(contentMode: .fit)
+              .frame(width: 25, height: 25)
+              .foregroundStyle(.white)
+              .opacity(0.7)
           }
+          
+          Spacer()
+          
+          Button(action: {
+            DispatchQueue.global(qos: .background).async {
+              let chunkSize = 5
+              var chunks = [[Int]]()
+              for startIndex in stride(from: 0, to: CL.ids.count, by: chunkSize) {
+                let endIndex = startIndex + chunkSize
+                if endIndex <= CL.ids.count {
+                  chunks.append(Array(CL.ids[startIndex..<endIndex]))
+                } else {
+                  chunks.append(Array(CL.ids[startIndex..<CL.ids.count]))
+                }
+              }
+              
+              for loadIds in chunks {
+                EditResourceDatabase().fetchImages(ids: loadIds) { images in
+                  for image in images {
+                    if let image = image.image {
+                      BooksDatabase().addOriginal(original: image, to: bookName)
+                    }
+                  }
+                }
+              }
+              
+              EditResourceDatabase().dropTables() {
+                DispatchQueue.main.async {
+                  withAnimation {
+                    mainContent = .reading(.bookContent(.readPage))
+                  }
+                }
+              }
+            }
+          }) {
+            Text("Finish")
+              .font(.headline)
+              .foregroundStyle(.white)
+              .opacity(0.7)
+          }
+        }
+        .padding(30)
+        .padding(.top, 20)
+        
+        Spacer()
+
+        ZStack {
+          HStack {
+            Spacer()
+            HStack(spacing: 20) {
+              Button(action: {
+                
+              }) {
+                Image(systemName: "plus.square.on.square")
+                  .resizable()
+                  .aspectRatio(contentMode: .fit)
+                  .frame(width: 25, height: 25)
+                  .foregroundStyle(.white)
+                  .opacity(0.7)
+              }
+              
+              Button(action: {
+                print(EditResourceDatabase().fetchSortedIds())
+                EditResourceDatabase().deleteImages(startId: CL.ids[selectedIndex], quantity: 1, ids: CL.ids) {
+                  print(EditResourceDatabase().fetchSortedIds())
+                }
+                CL.ids = EditResourceDatabase().fetchSortedIds().map{$0.id}
+                let loadIndexes = (-1...1).map{selectedIndex + $0}.filter({$0>=0 && $0<=CL.ids.count-1})
+                CL.upDateContents(indexes: loadIndexes)
+              }) {
+                Image(systemName: "trash")
+                  .resizable()
+                  .aspectRatio(contentMode: .fit)
+                  .frame(width: 25, height: 25)
+                  .foregroundStyle(.white)
+                  .opacity(0.7)
+              }
+            }
+            .overlay(
+              RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .stroke(.white.opacity(0.8), lineWidth: 2)
+                .frame(width: 120, height: 40)
+            )
+            .onLongPressGesture {
+              print("yes")
+              startSetting = true
+            }
+            .simultaneousGesture(
+              DragGesture()
+                .onChanged { gesture in
+                  if startSetting == true {
+                    fingerOffset += gesture.translation.height
+                  }
+                }
+                .onEnded { _ in
+                  if startSetting == true {
+                    startSetting = false
+                  }
+                }
+            )
+          }
+          .padding(.bottom, 50  + fingerOffset)
+          .padding(.horizontal, 20)
+        }
+ 
+        HStack {
+          Button(action: {
+            
+          }) {
+            HStack(spacing: 0) {
+              Text(String(selectedIndex + 1))
+                .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .move(edge: .top)))
+                .font(.headline)
+                .bold()
+                .foregroundStyle(.white)
+              Text("/\(String(CL.ids.count))")
+                .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .move(edge: .top)))
+                .font(.headline)
+                .bold()
+                .foregroundStyle(.white)
+            }
+          }
+          Spacer()
+        }
+        .padding(30)
       }
     }
     .ignoresSafeArea()
@@ -233,12 +382,18 @@ class RE_ContentLoader: ObservableObject {
   func upDateContents(indexes: [Int]) {
     let loadIds: [Int] = indexes.map{ids[$0]}
     
-    //Load the ones we need
-    let newImages = EditResourceDatabase().fetchImages(ids: loadIds)
-    
-    DispatchQueue.main.async {
-      self.contents = newImages
-      print(self.contents.map{$0.id})
+    EditResourceDatabase().fetchImages(ids: loadIds) { images in
+      DispatchQueue.main.async {
+        self.contents = images
+        print(self.contents.map{$0.id})
+      }
     }
+  }
+  
+  func load() {
+    ids = EditResourceDatabase().fetchSortedIds().map{$0.id}
+    print(ids)
+    let loadIndexes = (-1...1).map{0 + $0}.filter({$0>=0 && $0<=ids.count-1})
+    upDateContents(indexes: loadIndexes)
   }
 }

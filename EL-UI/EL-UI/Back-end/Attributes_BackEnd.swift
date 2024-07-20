@@ -40,7 +40,7 @@ struct Word: Codable {
   var pos: POSType
 }
 
-struct Quadrilateral: Codable {
+struct Quadrilateral: Codable, Equatable {
   var topLeft: CGPoint
   var topRight: CGPoint
   var bottomRight: CGPoint

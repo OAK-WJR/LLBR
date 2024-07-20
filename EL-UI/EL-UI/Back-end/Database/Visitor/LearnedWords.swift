@@ -141,7 +141,7 @@ class LearedWordsDatabase {
   
   //MARK: - Main function - Filter words
   
-  func filter(words: [[Word]]) -> [Int] {
+  func filter(words: [[Word]], definitions: [String:(word: String, definitions: [POSType:[String]])]) -> [Int] {
     //splitForm = group the words with firstLetterClassification -> ([String:[Word]], [String:[[Int]]])
     /*Ex: [Word(texts: "apple", pos: .noun),
      Word(texts: "banana", pos: .noun),
@@ -202,11 +202,24 @@ class LearedWordsDatabase {
         sqlite3_finalize(queryStatement)
         
         for (wordIndex, word) in words.enumerated() {
-//          print(wordIndex)
+          
+          print(word)
+          if word.count == 1 && word[0].texts.count <= 3 {
+            if word[0].texts.count >= 2 && 
+                definitions[word[0].texts.lowercased()]?.word == word[0].texts.lowercased() &&
+                word[0].pos == .noun {
+              print("yes")
+            } else {
+              print("pass")
+              continue
+            }
+          }
+          
+          //print(wordIndex)
           var i = 0
           var filteredWord = false
           while !filteredWord && i < word.count {
-//            print(word[i].texts," ",word[i].pos)
+            //print(word[i].texts," ",word[i].pos)
             if existingWords.contains(word[i].texts.lowercased()) {
               filteredWord = true
             }

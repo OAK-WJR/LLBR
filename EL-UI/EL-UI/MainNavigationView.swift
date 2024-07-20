@@ -18,7 +18,7 @@ struct MainNavigationView: View {
         .edgesIgnoringSafeArea(.all)
       VStack {
         Spacer()
-        Text("Trust your self, it's a circle and always will be")
+        Text("Trust your self, it's a circle and always will be.")
           .foregroundColor(.white)
           .font(.custom("Bubblegum", size: 9))
           .padding()

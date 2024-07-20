@@ -14,22 +14,19 @@ enum BookEditContent {
 }
 
 struct ResourceEntryView: View {
+  @Binding var bookName: String
+  @Binding var mainContent: ViewContent
   @State var viewContent: BookEditContent = .entry
   var body: some View {
-    
-    switch viewContent {
-    case .typeSelection:
-      EmptyView()
-    case .entry:
-      CustomCameraView(viewContent: $viewContent)
-        .transition(.asymmetric(
-          insertion: .move(edge: .trailing),
-          removal: .move(edge: .leading)
-        ))
-    case .edit:
-      ResourceEditView()
+    ZStack {
+      CustomCameraView(mainContent: $mainContent, viewContent: $viewContent)
+      
+      VStack {
+        if viewContent == .edit {
+          ResourceEditView(bookName: $bookName, mainContent: $mainContent, viewContent: $viewContent)
+            .transition(.move(edge: .trailing))
+        }
+      }
     }
-    
-    
   }
 }

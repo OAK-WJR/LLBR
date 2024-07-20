@@ -15,13 +15,27 @@ struct ReadingView: View {
   
   @State var readingMode: ReadingMode = .mixed
   @State var pageFlipMode: PageFlipMode = .scroll
+  
+  @Binding var showBookList: Bool
+  
+  @State var showMenu: Bool = false
+  
   var body: some View {
     ZStack {
-      switch readingMode {
-      case .mixed:
-        MixedReadingView(pageFlipMode: $pageFlipMode, viewContent: $viewContent, bookName: $bookName)
-      case .singe:
-        SingleReadingView()
+      ZStack {
+        switch readingMode {
+        case .mixed:
+          MixedReadingView(pageFlipMode: $pageFlipMode, viewContent: $viewContent, bookName: $bookName, showMenu: $showMenu)
+        case .singe:
+          SingleReadingView()
+        }
+      }
+      
+      VStack {
+        if showMenu {
+          Menu(viewContent: $viewContent, showBookList: $showBookList)
+            .transition(.move(edge: .top))
+        }
       }
     }
   }
@@ -33,13 +47,49 @@ struct MixedReadingView: View {
   @Binding var viewContent: ViewContent
   @Binding var bookName: String
   
+  @Binding var showMenu: Bool
+  
   var body: some View {
     switch pageFlipMode {
     case .scroll:
-      ScrollShowView(bookName: $bookName, viewContent: $viewContent)
+      ScrollShowView(bookName: $bookName, viewContent: $viewContent, showMenu: $showMenu)
+
     case .page:
       Text("page view")
     }
+  }
+}
+
+struct Menu: View {
+  @Binding var viewContent: ViewContent
+  @Binding var showBookList: Bool
+  var body: some View {
+      VStack {
+        HStack {
+          Button(action: {
+            showBookList = false
+            viewContent = .reading(.booksList)
+          }) {
+            Image(systemName: "chevron.backward")
+              .foregroundStyle(.white)
+              .padding()
+          }
+          
+          Spacer()
+          
+          Button(action: {
+            viewContent = .reading(.bookEdit)
+          }) {
+            Image(systemName: "plus")
+              .foregroundStyle(.white)
+              .padding()
+          }
+           
+        }
+        .background(Color.black.opacity(0.8).ignoresSafeArea())
+        
+        Spacer()
+      }
   }
 }
 

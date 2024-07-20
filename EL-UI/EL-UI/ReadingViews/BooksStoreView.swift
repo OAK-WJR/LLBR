@@ -14,7 +14,7 @@ struct BooksStoreView: View {
   
   @State var bookList: [BookInfo] = []
   @State var bookStoreViewDuration: CGFloat = 3
-  @State var showBookList: Bool = false
+  @Binding var showBookList: Bool
   var body: some View {
     if showBookList {
       BookListView(bookName: $bookName, content: $content, bookList: $bookList)

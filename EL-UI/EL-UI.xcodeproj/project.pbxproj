@@ -99,7 +99,7 @@
 		340F4F742B5F38EB00276C33 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		340F4F7D2B5F6D3100276C33 /* StarsParticles.scnp */ = {isa = PBXFileReference; lastKnownFileType = file.scp; path = StarsParticles.scnp; sourceTree = "<group>"; };
 		340FBEA82BC61C13004E5DDC /* DirectionIdentify.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionIdentify.swift; sourceTree = "<group>"; };
-		340FBEAB2BC65174004E5DDC /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
+		340FBEAB2BC65174004E5DDC /* Storage.swift */ = {isa = PBXFileReference; indentWidth = 1; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
 		340FBEAD2BC719A4004E5DDC /* ResourceEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceEntryView.swift; sourceTree = "<group>"; };
 		340FBEAF2BC719C2004E5DDC /* EntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryView.swift; sourceTree = "<group>"; };
 		340FBEB12BC719EE004E5DDC /* SelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionView.swift; sourceTree = "<group>"; };

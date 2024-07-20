@@ -13,6 +13,8 @@ struct ScrollShowView: View {
   @Binding var bookName: String
   @Binding var viewContent: ViewContent
   
+  @Binding var showMenu: Bool
+  
   @State var selectedPageId: Int?
   @State var selectedWordIndex: Int = Int()
   
@@ -51,6 +53,14 @@ struct ScrollShowView: View {
                       .onTapGesture(count: 1, coordinateSpace: .local) { point in
                         wordChoosing(id: id, point: point, edit: false)
                       }
+                      .gesture(
+                        LongPressGesture(minimumDuration: 0.5)
+                          .onEnded { _ in
+                            withAnimation {
+                              self.showMenu.toggle()
+                            }
+                          }
+                      )
                       .background {
                         GeometryReader { geo in
                           Color.clear
@@ -84,7 +94,6 @@ struct ScrollShowView: View {
         .onAppear {
           UIScrollView.appearance().bounces = false
         }
-        
         WordsShowingView(bookName: bookName, selectedPageId: selectedPageId, selectedWordIndex: $selectedWordIndex, CL: CL, VO: VO)
         
       }
@@ -163,12 +172,12 @@ extension ScrollShowView {
     if let size = VO.sizes[id] {
       let location = CGPoint(x: point.x / size.width, y: point.y / size.height)
       print(location)
-      if let selectedPageIndex = CL.contents.firstIndex(where: {$0.id == id}) {
-        let selectedContent = CL.contents[selectedPageIndex]
+      if let selectedPageIndex = CL.contents.firstIndex(where: {$0.id == id}),
+         let selectedtextContent = CL.contents[selectedPageIndex].textContent {
         
-        var positions = selectedContent.textContent!.positions
+        var positions = selectedtextContent.positions
         if !edit {
-          positions = selectedContent.textContent!.unknownWordsIndex!.map{selectedContent.textContent!.positions![$0]}
+          positions = selectedtextContent.unknownWordsIndex!.map{selectedtextContent.positions![$0]}
         }
         
         var minDistance: CGFloat = 999
@@ -189,23 +198,23 @@ extension ScrollShowView {
           if edit {
             selectedWordIndex = closestIndex
           } else {
-            print(selectedContent.textContent!.unknownWordsIndex!)
-            selectedWordIndex = selectedContent.textContent!.unknownWordsIndex![closestIndex]
+            print(selectedtextContent.unknownWordsIndex!)
+            selectedWordIndex = selectedtextContent.unknownWordsIndex![closestIndex]
           }
           selectedPageId = id
           
-          let selectedWord: String = (selectedContent.textContent?.texts![selectedWordIndex].texts)!
+          let selectedWord: String = selectedtextContent.texts![selectedWordIndex].texts
           
           if edit {
-            if !selectedContent.textContent!.unknownWordsIndex!.contains(closestIndex) {
+            if !selectedtextContent.unknownWordsIndex!.contains(closestIndex) {
               CL.contents[selectedPageIndex].textContent?.unknownWordsIndex!.append(closestIndex)
               
               DispatchQueue.global(qos: .userInitiated).async {
-                let word = Lemmatization().morphy(words: [selectedContent.textContent!.texts![closestIndex]])
+                let word = Lemmatization().morphy(words: [selectedtextContent.texts![closestIndex]])
                 LearedWordsDatabase().remove([word[0]])
               }
             } else {
-              if let wordIndexes = selectedContent.textContent!.indexed![selectedWord.lowercased()] {
+              if let wordIndexes = selectedtextContent.indexed![selectedWord.lowercased()] {
                 for wordIndex in wordIndexes {
                   print(wordIndex)
                   if let removeIndex = CL.contents[selectedPageIndex].textContent?.unknownWordsIndex!.firstIndex(of: wordIndex) {
@@ -236,7 +245,7 @@ extension ScrollShowView {
                 
                 UnknowWordsDatabase().remove(words: [selectedWord.lowercased()])
                 
-                let word = Lemmatization().morphy(words: [selectedContent.textContent!.texts![closestIndex]])
+                let word = Lemmatization().morphy(words: [selectedtextContent.texts![closestIndex]])
                 LearedWordsDatabase().add(word)
               }
             }
@@ -245,7 +254,7 @@ extension ScrollShowView {
             print(CL.contents[selectedPageIndex].textContent!.unknownWordsIndex!)
             
             DispatchQueue.global(qos: .userInitiated).async {
-              let newImage = ImageProcessing().drawQuadrilateralsOnImage(pageInformation: CL.contents[selectedPageIndex].textContent!, baseImage: selectedContent.viewContent!.originalImage!)
+              let newImage = ImageProcessing().drawQuadrilateralsOnImage(pageInformation: CL.contents[selectedPageIndex].textContent!, baseImage: CL.contents[selectedPageIndex].viewContent!.originalImage!)
               DispatchQueue.main.async {
                 CL.contents[selectedPageIndex].viewContent?.showImage = newImage
               }
