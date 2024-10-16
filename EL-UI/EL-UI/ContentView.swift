@@ -14,28 +14,35 @@ struct ContentView: View {
   
   @State var showBookList: Bool = false
   
+  @State var showPrivacyConsent: Bool = !UserDefaults.standard.bool(forKey: "PrivacyPolicyAgreed")
+  
   var body: some View {
-    if showMainContentView {
-      MainNavigationView(content: $content, showMainNavigationView: $showMainContentView)
+    // If the privacy policy has not been accepted yet, show the privacy policy view first
+    if showPrivacyConsent {
+      PrivacyConsentView(showPrivacyConsent: $showPrivacyConsent)
     } else {
-      switch content {
-      case .reading(let reading):
-        switch reading {
-        case .booksList:
-          BooksStoreView(bookName: $bookName, content: $content, showBookList: $showBookList)
-        case .bookContent(let bookContent):
-          switch bookContent {
-          case .readPage:
-            ReadingView(bookName: $bookName, viewContent: $content, showBookList: $showBookList)
-          case .addPage:
-            EmptyView()
+      if showMainContentView {
+        MainNavigationView(content: $content, showMainNavigationView: $showMainContentView)
+      } else {
+        switch content {
+        case .reading(let reading):
+          switch reading {
+          case .booksList:
+            BooksStoreView(bookName: $bookName, content: $content, showBookList: $showBookList)
+          case .bookContent(let bookContent):
+            switch bookContent {
+            case .readPage:
+              ReadingView(bookName: $bookName, viewContent: $content, showBookList: $showBookList)
+            case .addPage:
+              EmptyView()
+            }
+          case .bookEdit:
+            ResourceEntryView(bookName: $bookName, mainContent: $content)
+              .environmentObject(RE_ContentLoader())
           }
-        case .bookEdit:
-          ResourceEntryView(bookName: $bookName, mainContent: $content)
-            .environmentObject(RE_ContentLoader())
+        case .learning:
+          EmptyView()
         }
-      case .learning:
-        EmptyView()
       }
     }
   }

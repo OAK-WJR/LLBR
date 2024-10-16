@@ -52,8 +52,8 @@ struct MainNavigationSceneView: UIViewRepresentable {
       }
     }
     
-    @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
-      if gesture.state == .began {
+    @objc func handleTap(_ gesture: UITapGestureRecognizer) {
+      if gesture.state == .ended {
         self.content.wrappedValue = .reading(.booksList)
         self.showAnimateCameraForward.wrappedValue = true
       }
@@ -67,9 +67,9 @@ struct MainNavigationSceneView: UIViewRepresentable {
   func makeUIView(context: Context) -> SCNView {
     let sceneView = SCNView()
     sceneView.scene = SCNScene()
-    
-    let longPressGesture = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress))
-    sceneView.addGestureRecognizer(longPressGesture)
+
+    let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap))
+    sceneView.addGestureRecognizer(tapGesture)
     
     // Set up the camera
     let cameraNode = SCNNode()

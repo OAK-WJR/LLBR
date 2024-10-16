@@ -31,12 +31,12 @@ class BooksDatabase {
         print("Need to create 'diary' database")
         self.createTable(named: "diary")
         
-//        for i in 0...5 {
-//          guard let path = Bundle.main.path(forResource: String(i), ofType: "jpg") else { return }
-//          if let image = UIImage(contentsOfFile: path) {
-//            self.addOriginal(original: image, to: "diary")
-//          }
-//        }
+        for i in 1...6 {
+          guard let path = Bundle.main.path(forResource: String(i), ofType: "jpg") else { return }
+          if let image = UIImage(contentsOfFile: path) {
+            self.addOriginal(original: image, to: "diary")
+          }
+        }
       }
     }
   }

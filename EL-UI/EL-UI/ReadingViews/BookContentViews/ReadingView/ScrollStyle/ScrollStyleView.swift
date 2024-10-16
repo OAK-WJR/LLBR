@@ -56,9 +56,11 @@ struct ScrollShowView: View {
                       .gesture(
                         LongPressGesture(minimumDuration: 0.5)
                           .onEnded { _ in
+                            /*
                             withAnimation {
                               self.showMenu.toggle()
                             }
+                             */
                           }
                       )
                       .background {

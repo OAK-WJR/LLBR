@@ -18,7 +18,7 @@ struct ReadingView: View {
   
   @Binding var showBookList: Bool
   
-  @State var showMenu: Bool = false
+  @State var showMenu: Bool = true
   
   var body: some View {
     ZStack {

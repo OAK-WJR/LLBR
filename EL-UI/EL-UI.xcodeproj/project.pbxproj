@@ -60,6 +60,8 @@
 		343631B22B6193DD007C7F8C /* CameraPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 343631B12B6193DD007C7F8C /* CameraPage.swift */; };
 		343631B42B619440007C7F8C /* LearningResultsDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 343631B32B619440007C7F8C /* LearningResultsDisplayView.swift */; };
 		343631BE2B630107007C7F8C /* star.png in Resources */ = {isa = PBXBuildFile; fileRef = 343631BD2B630107007C7F8C /* star.png */; };
+		34C502E82CBB29B3009E866F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 34C502E72CBB29B3009E866F /* Assets.xcassets */; };
+		34C502EA2CBB2B30009E866F /* PrivacyConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C502E92CBB2B30009E866F /* PrivacyConsentView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -118,6 +120,8 @@
 		343631B12B6193DD007C7F8C /* CameraPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPage.swift; sourceTree = "<group>"; };
 		343631B32B619440007C7F8C /* LearningResultsDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningResultsDisplayView.swift; sourceTree = "<group>"; };
 		343631BD2B630107007C7F8C /* star.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = star.png; sourceTree = "<group>"; };
+		34C502E72CBB29B3009E866F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = ../../LLBR/LLBR/Assets.xcassets; sourceTree = "<group>"; };
+		34C502E92CBB2B30009E866F /* PrivacyConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyConsentView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -279,11 +283,13 @@
 				3436319D2B605D61007C7F8C /* Info.plist */,
 				340F4F6D2B5F38E700276C33 /* EL_UIApp.swift */,
 				340F4F6F2B5F38E700276C33 /* ContentView.swift */,
+				34C502E92CBB2B30009E866F /* PrivacyConsentView.swift */,
 				343631AA2B618A8E007C7F8C /* MainNavigationView.swift */,
 				343631AF2B6193A7007C7F8C /* ReadingViews */,
 				343631B02B6193BE007C7F8C /* LearningView */,
 				3413AFB52BB6452400995D4F /* Widgets */,
 				343631AC2B618B44007C7F8C /* Attributes_FrontEnd.swift */,
+				34C502E72CBB29B3009E866F /* Assets.xcassets */,
 				340F4F732B5F38EB00276C33 /* Preview Content */,
 			);
 			path = "EL-UI";
@@ -445,6 +451,7 @@
 				340AA95C2BAEA446004DF5E4 /* adv.exc in Resources */,
 				340AA9592BAEA446004DF5E4 /* verb.exc in Resources */,
 				340AA95A2BAEA446004DF5E4 /* adj.exc in Resources */,
+				34C502E82CBB29B3009E866F /* Assets.xcassets in Resources */,
 				340AA9522BAEA446004DF5E4 /* UnknowWords.db in Resources */,
 				340AA9582BAEA446004DF5E4 /* other.exc in Resources */,
 				340AA9512BAEA446004DF5E4 /* UserInfo.db in Resources */,
@@ -504,6 +511,7 @@
 				340AA94A2BAEA446004DF5E4 /* UserInfo.swift in Sources */,
 				340AA94F2BAEA446004DF5E4 /* GeneralTools.swift in Sources */,
 				3413AFBA2BB6576B00995D4F /* ScrollStyleView.swift in Sources */,
+				34C502EA2CBB2B30009E866F /* PrivacyConsentView.swift in Sources */,
 				343631B22B6193DD007C7F8C /* CameraPage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -636,26 +644,28 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_ASSET_PATHS = "\"EL-UI/Preview Content\"";
-				DEVELOPMENT_TEAM = 9FPKHQ888R;
+				DEVELOPMENT_TEAM = MD2AX9P6F2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "EL-UI/Info.plist";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Take photo for book picture";
+				INFOPLIST_KEY_CFBundleDisplayName = "Language Network: Book Reader";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Take pictures of book pages to help identify unfamiliar words and improve the reading experience.\n";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "WuJiaRui.EL-UI";
+				MARKETING_VERSION = 2.0.3;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WuJiaRui.LLBR;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -669,26 +679,28 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_ASSET_PATHS = "\"EL-UI/Preview Content\"";
-				DEVELOPMENT_TEAM = 9FPKHQ888R;
+				DEVELOPMENT_TEAM = MD2AX9P6F2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "EL-UI/Info.plist";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Take photo for book picture";
+				INFOPLIST_KEY_CFBundleDisplayName = "Language Network: Book Reader";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Take pictures of book pages to help identify unfamiliar words and improve the reading experience.\n";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "WuJiaRui.EL-UI";
+				MARKETING_VERSION = 2.0.3;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WuJiaRui.LLBR;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
