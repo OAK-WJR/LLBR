@@ -279,10 +279,16 @@ struct ResourceEditView: View {
               }
             }
           }) {
-            Text("Finish")
-              .font(.headline)
-              .foregroundStyle(.white)
-              .opacity(0.7)
+            HStack {
+              Text("Add to Book")
+                .font(.headline)
+                .foregroundStyle(.white)
+                .opacity(0.9)
+              Image(systemName: "arrowshape.turn.up.forward")
+                .font(.headline)
+                .foregroundStyle(.white)
+                .opacity(0.9)
+            }
           }
         }
         .padding(30)
@@ -294,6 +300,7 @@ struct ResourceEditView: View {
           HStack {
             Spacer()
             HStack(spacing: 20) {
+              /*
               Button(action: {
                 
               }) {
@@ -304,6 +311,7 @@ struct ResourceEditView: View {
                   .foregroundStyle(.white)
                   .opacity(0.7)
               }
+               */
               
               Button(action: {
                 print(EditResourceDatabase().fetchSortedIds())
@@ -313,6 +321,11 @@ struct ResourceEditView: View {
                 CL.ids = EditResourceDatabase().fetchSortedIds().map{$0.id}
                 let loadIndexes = (-1...1).map{selectedIndex + $0}.filter({$0>=0 && $0<=CL.ids.count-1})
                 CL.upDateContents(indexes: loadIndexes)
+                if CL.ids.isEmpty {
+                  withAnimation {
+                    viewContent = .entry
+                  }
+                }
               }) {
                 Image(systemName: "trash")
                   .resizable()

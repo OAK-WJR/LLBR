@@ -8,7 +8,25 @@
 import SwiftUI
 
 struct LearningResultsDisplayView: View {
+  @Binding var showMainNavigationView: Bool
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+      VStack {
+        HStack {
+          Button(action: {
+            showMainNavigationView = true
+          }) {
+            Image(systemName: "globe.badge.chevron.backward")
+              .font(.headline)
+              .foregroundStyle(.white)
+              .padding(.horizontal)
+          }
+          Spacer()
+        }
+        Spacer()
+        Text("Coming soon")
+          .font(.title)
+          .foregroundStyle(.white)
+        Spacer()
+      }
     }
 }

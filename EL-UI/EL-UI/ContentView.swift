@@ -8,7 +8,7 @@ import SwiftUI
 
 struct ContentView: View {
   @State var content: ViewContent = .reading(.bookEdit)
-  @State var showMainContentView: Bool = true
+  @State var showMainNavigationView: Bool = true
   
   @State var bookName: String = "dairy"
   
@@ -21,14 +21,14 @@ struct ContentView: View {
     if showPrivacyConsent {
       PrivacyConsentView(showPrivacyConsent: $showPrivacyConsent)
     } else {
-      if showMainContentView {
-        MainNavigationView(content: $content, showMainNavigationView: $showMainContentView)
+      if showMainNavigationView {
+        MainNavigationView(content: $content, showMainNavigationView: $showMainNavigationView)
       } else {
         switch content {
         case .reading(let reading):
           switch reading {
           case .booksList:
-            BooksStoreView(bookName: $bookName, content: $content, showBookList: $showBookList)
+            BooksStoreView(bookName: $bookName, showMainNavigationView: $showMainNavigationView, content: $content, showBookList: $showBookList)
           case .bookContent(let bookContent):
             switch bookContent {
             case .readPage:
@@ -41,7 +41,7 @@ struct ContentView: View {
               .environmentObject(RE_ContentLoader())
           }
         case .learning:
-          EmptyView()
+          LearningResultsDisplayView(showMainNavigationView: $showMainNavigationView)
         }
       }
     }

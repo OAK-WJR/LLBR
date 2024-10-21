@@ -10,6 +10,8 @@ import SceneKit
 
 struct BooksStoreView: View {
   @Binding var bookName: String
+  
+  @Binding var showMainNavigationView: Bool
   @Binding var content: ViewContent
   
   @State var bookList: [BookInfo] = []
@@ -17,7 +19,7 @@ struct BooksStoreView: View {
   @Binding var showBookList: Bool
   var body: some View {
     if showBookList {
-      BookListView(bookName: $bookName, content: $content, bookList: $bookList)
+      BookListView(bookName: $bookName, showMainNavigationView: $showMainNavigationView, content: $content, showBookList: $showBookList, bookList: $bookList)
     } else {
       BooksStoreSceneView(duration: bookStoreViewDuration)
         .ignoresSafeArea()
@@ -35,90 +37,108 @@ struct BooksStoreView: View {
 
 struct BookListView: View {
   @Binding var bookName: String
+  
+  @Binding var showMainNavigationView: Bool
   @Binding var content: ViewContent
   
+  @Binding var showBookList: Bool
+  
   @Binding var bookList: [BookInfo]
-  @State var showSearchBar: Bool = false
+  @State var showSearchBar: Bool = true
   @State var searchBookName: String = ""
   var body: some View {
-    List {
-      if showSearchBar {
-        TextField("Search for the book title", text: $searchBookName)
-      }
-      ForEach(0 ..< bookList.count, id: \.self) { i in
-        HStack(spacing: 30) {
-          if let cover = bookList[i].coverImage {
-            Image(uiImage: cover)
-              .resizable()
-              .frame(width: 50, height: 50)
-          } else {
-            Image("DiaryCover")
-              .resizable()
-              .scaledToFill()
-              .frame(width: 50, height: 50)
-          }
-          VStack(alignment: .leading) {
-            Text(bookList[i].name.uppercased())
-              .font(.system(size: 26))
-              .bold()
-            Text(bookList[i].finalOpenTime.formatted(.dateTime.year().month().day()))
-              .font(.headline)
-              .foregroundColor(.gray)
-            Text("Page Amount: " + String(bookList[i].pageNumber))
-              .font(.headline)
-              .foregroundColor(.gray)
-          }
-          Spacer()
+    VStack(spacing: 0) {
+      HStack {
+        Button(action: {
+          showMainNavigationView = true
+          showBookList = false
+        }) {
+          Image(systemName: "globe.badge.chevron.backward")
+            .font(.headline)
+            .foregroundStyle(.white)
+            .padding(.horizontal)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-          Button(action: {
-            withAnimation {
-              bookName = bookList[i].name
-              content = .reading(.bookContent(.readPage))
+        Spacer()
+      }
+      List {
+        if showSearchBar {
+          TextField("Search for the book title", text: $searchBookName)
+        }
+        ForEach(0 ..< bookList.count, id: \.self) { i in
+          HStack(spacing: 30) {
+            if let cover = bookList[i].coverImage {
+              Image(uiImage: cover)
+                .resizable()
+                .frame(width: 50, height: 50)
+            } else {
+              Image("DiaryCover")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 50, height: 50)
             }
-          }) {
-            Color.clear
-          }
-        }
-      }
-      .onDelete(perform: { indexs in
-        if let index = indexs.first {
-          bookList.remove(at: index)
-        }
-      })
-    }
-    .refreshable {
-      withAnimation {
-        showSearchBar.toggle()
-      }
-    }
-    .overlay {
-      if showSearchBar {
-        VStack {
-          HStack {
+            VStack(alignment: .leading) {
+              Text(bookList[i].name.uppercased())
+                .font(.system(size: 26))
+                .bold()
+              Text(bookList[i].finalOpenTime.formatted(.dateTime.year().month().day()))
+                .font(.headline)
+                .foregroundColor(.gray)
+              Text("Page Amount: " + String(bookList[i].pageNumber))
+                .font(.headline)
+                .foregroundColor(.gray)
+            }
             Spacer()
-            HStack {
-              Button(action: {
-                //Edit
-              }) {
-                Image(systemName: "list.dash")
-                  .foregroundColor(.black)
-                  .bold()
-              }
-              Button(action: {
-                //Add Book
-              }) {
-                Image(systemName: "plus")
-                  .foregroundColor(.black)
-                  .bold()
-              }
-            }
-            .padding(30)
           }
-          Spacer()
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .background {
+            Button(action: {
+              withAnimation {
+                bookName = bookList[i].name
+                content = .reading(.bookContent(.readPage))
+              }
+            }) {
+              Color.clear
+            }
+          }
         }
-        .ignoresSafeArea()
+        .onDelete(perform: { indexs in
+          if let index = indexs.first {
+            bookList.remove(at: index)
+          }
+        })
+      }
+      .refreshable {
+        withAnimation {
+          showSearchBar.toggle()
+        }
+      }
+      .overlay {
+        if showSearchBar {
+          VStack {
+            HStack {
+              Spacer()
+              HStack {
+                Button(action: {
+                  //Edit
+                }) {
+                  Image(systemName: "list.dash")
+                    .foregroundColor(.black)
+                    .bold()
+                }
+                Button(action: {
+                  //Add Book
+                }) {
+                  Image(systemName: "plus")
+                    .foregroundColor(.black)
+                    .bold()
+                }
+              }
+              .padding(30)
+            }
+            Spacer()
+          }
+          .ignoresSafeArea()
+        }
       }
     }
   }

@@ -53,11 +53,43 @@ struct CustomCameraView: View {
           }
         }
       
-      if let image = image {
-        VStack {
+      
+      VStack {
+        HStack {
+          Button(action: {
+            withAnimation {
+              mainContent = .reading(.bookContent(.readPage))
+            }
+          }) {
+            Image(systemName: "list.bullet.rectangle")
+              .font(.headline)
+              .foregroundColor(.white)
+              .padding()
+          }
           Spacer()
-          HStack {
-            VStack {
+          if let image = image {
+            Button(action: {
+              DispatchQueue.global(qos: .userInitiated).async {
+                EditResourceDatabase().insertImage(image: image, atIndex: -1) {
+                  CL.load()
+                  self.image = nil
+                  withAnimation {
+                    viewContent = .edit
+                  }
+                }
+              }
+            }) {
+              Image(systemName: "arrowshape.right")
+                .font(.headline)
+                .foregroundColor(.white)
+                .padding()
+            }
+          }
+        }
+        Spacer()
+        HStack {
+          VStack {
+            if let image = image {
               if !trashImage {
                 Image(uiImage: image)
                   .resizable()
@@ -85,15 +117,15 @@ struct CustomCameraView: View {
                   }
               }
             }
-            Spacer()
           }
+          Spacer()
         }
-        .onAppear {
-          trashImage = false
-          showPicture = false
-          withAnimation(.easeInOut(duration: 0.3)) {
-            showPicture = true
-          }
+      }
+      .onAppear {
+        trashImage = false
+        showPicture = false
+        withAnimation(.easeInOut(duration: 0.3)) {
+          showPicture = true
         }
       }
       

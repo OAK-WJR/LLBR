@@ -17,6 +17,7 @@ struct ResourceEntryView: View {
   @Binding var bookName: String
   @Binding var mainContent: ViewContent
   @State var viewContent: BookEditContent = .entry
+
   var body: some View {
     ZStack {
       CustomCameraView(mainContent: $mainContent, viewContent: $viewContent)
