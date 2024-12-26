@@ -190,6 +190,14 @@ class CustomPDFView: PDFKit.PDFView {
     }
   }
   
+  // Override layoutSubviews to limit scaleFactor
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    self.minScaleFactor = self.scaleFactorForSizeToFit
+    self.maxScaleFactor = 2.0 // You can adjust the maximum zoom as needed
+    self.scaleFactor = max(self.scaleFactor, self.minScaleFactor)
+  }
+  
   deinit {
     NotificationCenter.default.removeObserver(self, name: .PDFViewPageChanged, object: self)
   }

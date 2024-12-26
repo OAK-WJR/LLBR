@@ -44,7 +44,26 @@ class LearedWordsDatabase {
   }
   
   private func populateUserLearned() {
-    let queryStatementString = "INSERT OR IGNORE INTO UserLearned (word, POS) SELECT word, POS FROM WordFreq WHERE id <= 3999;"
+    var freqDataBase = "BNC_Freq"
+    var levelNum = 3999
+    if let userEnglishLevel = UserSettings.shared.userEnglishLevel {
+      switch userEnglishLevel.learningSystem {
+      case .US:
+        freqDataBase = "BNC_Freq"
+      case .UK:
+        freqDataBase = "COCA_Freq"
+      }
+      
+      switch userEnglishLevel.vocabularyLevel {
+      case .beginner:
+        levelNum = 1000
+      case .intermediate:
+        levelNum = 3999
+      case .advanced:
+        levelNum = 6999
+      }
+    }
+    let queryStatementString = "INSERT OR IGNORE INTO UserLearned (word, POS) SELECT word, POS FROM \(freqDataBase) WHERE id <= \(levelNum);"
     var queryStatement: OpaquePointer?
     if sqlite3_prepare_v2(db, queryStatementString, -1, &queryStatement, nil) == SQLITE_OK {
       if sqlite3_step(queryStatement) == SQLITE_DONE {

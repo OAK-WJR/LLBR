@@ -15,9 +15,13 @@ struct ContentView: View {
   
   @State var showBookList: Bool = true
   
+  @EnvironmentObject var userSettings: UserSettings
+  
   var body: some View {
-    if !UserSettings.shared.isAgreedPolicy {
+    if !userSettings.isAgreedPolicy {
       PrivacyConsentView()
+    } else if userSettings.userEnglishLevel == nil {
+        EnglishLevelTest()
     } else {
       if showMainContentView {
         MainNavigationView(content: $content, showMainNavigationView: $showMainContentView)

@@ -57,14 +57,14 @@ class BooksDatabase {
   
   func openDatabase() {
     let fileURL = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-      .appendingPathComponent("Books.db")
-
-    if sqlite3_open(fileURL.path, &db) != SQLITE_OK {
-      print("Error opening database")
-      return
+                .appendingPathComponent("Books.db")
+    databaseQueue.sync {
+      if sqlite3_open(fileURL.path, &db) != SQLITE_OK {
+        print("Error opening database")
+      } else {
+        print("Successfully opened connection to database")
+      }
     }
-
-    print("Successfully opened connection to database")
   }
 
   func createIndexTableIfNeeded() {
@@ -761,7 +761,9 @@ class BooksDatabase {
   
   //MARK: - Close database connection
   deinit {
-    sqlite3_close(db)
+    databaseQueue.sync {
+      sqlite3_close(db)
+    }
   }
   
   //MARK: - Utilities
