@@ -33,21 +33,21 @@ class BooksDatabase {
         print("Need to create 'dairy' database")
         self.createTable(named: "dairy")
         
-        var images: [UIImage] = []
-        for i in 0...99 {
-          guard let path = Bundle.main.path(forResource: String(i), ofType: "jpg") else { continue }
-          if let image = UIImage(contentsOfFile: path) {
-            images.append(image)
-          }
-        }
-        print(images.count)
+//        var images: [UIImage] = []
+//        for i in 0...99 {
+//          guard let path = Bundle.main.path(forResource: String(i), ofType: "jpg") else { continue }
+//          if let image = UIImage(contentsOfFile: path) {
+//            images.append(image)
+//          }
+//        }
+//        print(images.count)
         
-        if !images.isEmpty {
-          self.addOriginal(originals: images, to: "dairy", chapterId: 0)
-          print("Successfully loaded images into the 'dairy' table.")
-        } else {
-          print("No images found to load into the 'dairy' table.")
-        }
+//        if !images.isEmpty {
+//          self.addOriginal(originals: images, to: "dairy", chapterId: 0)
+//          print("Successfully loaded images into the 'dairy' table.")
+//        } else {
+//          print("No images found to load into the 'dairy' table.")
+//        }
       }
     }
   }
@@ -58,13 +58,14 @@ class BooksDatabase {
   func openDatabase() {
     let fileURL = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
       .appendingPathComponent("Books.db")
-
-    if sqlite3_open(fileURL.path, &db) != SQLITE_OK {
-      print("Error opening database")
-      return
+    
+    databaseQueue.sync {
+      if sqlite3_open(fileURL.path, &db) != SQLITE_OK {
+        print("Error opening database")
+      } else {
+        print("Successfully opened connection to database")
+      }
     }
-
-    print("Successfully opened connection to database")
   }
 
   func createIndexTableIfNeeded() {
@@ -486,22 +487,34 @@ class BooksDatabase {
       // Begin the transaction
       if sqlite3_exec(db, "BEGIN TRANSACTION", nil, nil, nil) != SQLITE_OK {
         let errmsg = String(cString: sqlite3_errmsg(db))
-        print("Could not begin transaction. Error: \(errmsg)")
+        //print("Could not begin transaction. Error: \(errmsg)")
         return
       }
       
       if sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK {
         for original in originals {
-          let type = getType(of: original)
-          guard let originalData = processData(type: type, for: original) else {
-            print("Failed to process original data for item: \(original)")
+          // Make sure original is a CroppingImage and unwrap its image property
+          guard let croppingImage = original as? CroppingImage,
+                let unwrappedImage = croppingImage.image else {
+            print("Invalid original data: \(original)")
             continue
           }
           
+          // Set the type to UIImage
+          let type = "UIImage"
+          
+          // Convert the UIImage to binary data
+          guard let originalData = unwrappedImage.jpegData(compressionQuality: 1.0) else {
+            print("Failed to process image data for item: \(croppingImage)")
+            continue
+          }
+          
+          // Bind the SQL parameters
           sqlite3_bind_text(statement, 1, (type as NSString).utf8String, -1, nil)
           sqlite3_bind_blob(statement, 2, (originalData as NSData).bytes, Int32(originalData.count), nil)
           sqlite3_bind_int(statement, 3, Int32(chapterId))
           
+          // Run the insert
           if sqlite3_step(statement) == SQLITE_DONE {
             print("Successfully inserted row.")
           } else {
@@ -509,7 +522,8 @@ class BooksDatabase {
             print("Could not insert row. Error: \(errmsg)")
           }
           
-          sqlite3_reset(statement)  // Reset the statement for the next insert
+          // Reset the statement for the next insert
+          sqlite3_reset(statement)
         }
         sqlite3_finalize(statement)
       } else {
@@ -521,7 +535,7 @@ class BooksDatabase {
       // Commit the transaction
       if sqlite3_exec(db, "COMMIT TRANSACTION", nil, nil, nil) != SQLITE_OK {
         let errmsg = String(cString: sqlite3_errmsg(db))
-        print("Could not commit transaction. Error: \(errmsg)")
+        //print("Could not commit transaction. Error: \(errmsg)")
       }
       
       // processData function modified to support each element of a batch insert
@@ -761,7 +775,9 @@ class BooksDatabase {
   
   //MARK: - Close database connection
   deinit {
-    sqlite3_close(db)
+    databaseQueue.sync {
+      sqlite3_close(db)
+    }
   }
   
   //MARK: - Utilities

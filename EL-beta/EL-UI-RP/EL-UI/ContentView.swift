@@ -7,17 +7,20 @@
 import SwiftUI
 
 struct ContentView: View {
-  @State var content: ViewContent = .reading(.bookContent(.readPage))
-  @State var showMainContentView: Bool = false
+  @State var content: ViewContent = .reading(.booksList)
+  @State var showMainContentView: Bool = true
   
   @State var bookName: String = "dairy"
   @State var chapterNow: Int = 0
   
-  @State var showBookList: Bool = true
+  @State var showBookList: Bool = false
+  @EnvironmentObject var userSettings: UserSettings
   
   var body: some View {
-    if !UserSettings.shared.isAgreedPolicy {
+    if !userSettings.isAgreedPolicy {
       PrivacyConsentView()
+    } else if userSettings.userEnglishLevel == nil {
+      EnglishLevelTest()
     } else {
       if showMainContentView {
         MainNavigationView(content: $content, showMainNavigationView: $showMainContentView)

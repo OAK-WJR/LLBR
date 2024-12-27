@@ -14,6 +14,7 @@ struct ScrollShowView: View {
   //@Binding var viewContent: ViewContent
   
   @Binding var showMenu: Bool
+  @State var showTranslation: Bool = false
   
   @Binding var bookName: String
   @Binding var chapterNow: Int
@@ -91,8 +92,10 @@ struct ScrollShowView: View {
       
       VStack {
         if !showMenu {
-          WordsShowingView(bookName: bookName, selectedPageIndex: $currentPageIndex, selectedWordIndex: $selectedWordIndex, pdfContents: $pdfContent)
-            .transition(.move(edge: .bottom))
+          VStack {
+            WordsShowingView(showTranslation: $showTranslation, bookName: bookName, selectedPageIndex: $currentPageIndex, selectedWordIndex: $selectedWordIndex, pdfContents: $pdfContent)
+              .transition(.move(edge: .bottom))
+          }
         }
       }
     }
@@ -188,6 +191,14 @@ class CustomPDFView: PDFKit.PDFView {
       print("Current page changed to index: \(pageIndex)")
       currentPageIndexChanged?(pageIndex)
     }
+  }
+  
+  // Override layoutSubviews to limit scaleFactor
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    self.minScaleFactor = self.scaleFactorForSizeToFit
+    self.maxScaleFactor = 2.0 // You can adjust the maximum zoom as needed
+    self.scaleFactor = max(self.scaleFactor, self.minScaleFactor)
   }
   
   deinit {

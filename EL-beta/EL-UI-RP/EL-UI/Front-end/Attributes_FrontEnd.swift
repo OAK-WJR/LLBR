@@ -60,6 +60,7 @@ struct RPInfoContent {
   var texts: [Word]?
   var positions: [[Quadrilateral]]?
   var indexed: [String: [Int]]?
+  var sentences: [Range<Int>: String]?
   
   var unknownWordsIndex: [Int]?
   var learningWordsIndex: [Int]?

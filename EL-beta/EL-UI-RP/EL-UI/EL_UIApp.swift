@@ -12,6 +12,7 @@ struct EL_UIApp: App {
   var body: some Scene {
     WindowGroup {
       ContentView()
+        .environmentObject(UserSettings.shared)
     }
   }
 }

@@ -87,17 +87,17 @@ class FormatToWords {
             
             if let tag = tag, tags.contains(tag) {
               if tag == .personalName {
-                //print("\(newWords[wordIndex].texts): \(tag.rawValue): 000 -> \"\"")
+                print("\(newWords[wordIndex].texts): \(tag.rawValue): 000 -> \"\"")
                 newWords[wordIndex].texts = ""
               } else {
                 let specialWord = String(sentence[range])
                 let caseFixedWord = specialWord.capitalized
               
-                //print("\(newWords[wordIndex].texts): \(tag.rawValue): 001 -> \(caseFixedWord)")
+                print("\(newWords[wordIndex].texts): \(tag.rawValue): 001 -> \(caseFixedWord)")
                 newWords[wordIndex].texts = caseFixedWord
               }
             } else {
-              //print("\(newWords[wordIndex].texts): \(tag!.rawValue): 01 -> \(newWords[wordIndex].texts.lowercased())")
+              print("\(newWords[wordIndex].texts): \(tag!.rawValue): 01 -> \(newWords[wordIndex].texts.lowercased())")
               newWords[wordIndex].texts = newWords[wordIndex].texts.lowercased()
             }
             
@@ -112,20 +112,20 @@ class FormatToWords {
             if let tag = tag, tags.contains(tag) {
               
               if tag == .personalName {
-                //print("\(newWords[wordIndex].texts): \(tag.rawValue): 100 -> \"\"")
+                print("\(newWords[wordIndex].texts): \(tag.rawValue): 100 -> \"\"")
                 newWords[wordIndex].texts = ""
               } else {
-                //print("\(newWords[wordIndex].texts): \(tag.rawValue): 101 -> \(newWords[wordIndex].texts)")
+                print("\(newWords[wordIndex].texts): \(tag.rawValue): 101 -> \(newWords[wordIndex].texts)")
               }
             } else {
               if isFirstWord {
                 isFirstWord = false
                 let firstWord = String(sentence[range]).lowercased()
                 
-                //print("\(newWords[wordIndex].texts): \(tag!.rawValue): 110 -> \(firstWord)")
+                print("\(newWords[wordIndex].texts): \(tag!.rawValue): 110 -> \(firstWord)")
                 newWords[wordIndex].texts = firstWord
               } else {
-                //print("\(newWords[wordIndex].texts): \(tag!.rawValue): 111 -> \(newWords[wordIndex].texts)")
+                print("\(newWords[wordIndex].texts): \(tag!.rawValue): 111 -> \(newWords[wordIndex].texts)")
               }
             }
           }

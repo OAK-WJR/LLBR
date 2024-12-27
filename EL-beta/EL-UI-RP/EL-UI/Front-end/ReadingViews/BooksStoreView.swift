@@ -27,7 +27,7 @@ struct BooksStoreView: View {
               showBookList = true
             }
           }
-          bookList.append(BookInfo(name: "diary", coverImage: nil, addTime: Date.now, finalOpenTime: Date.now, pageNumber: 0))
+          bookList.append(BookInfo(name: "dairy", coverImage: nil, addTime: Date.now, finalOpenTime: Date.now, pageNumber: 0))
         }
     }
   }

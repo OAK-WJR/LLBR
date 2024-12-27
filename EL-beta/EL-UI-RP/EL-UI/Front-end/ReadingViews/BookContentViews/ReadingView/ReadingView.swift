@@ -44,12 +44,16 @@ struct ReadingView: View {
         if showCatalog {
           CatalogView(chapters: $chapters, showCatalog: $showCatalog, bookName: $bookName, chapterNow: $chapterNow)
             .transition(.move(edge: .trailing))
+            .transition(.move(edge: .trailing))
         }
       }
     }
     .onAppear {
       DispatchQueue.global(qos: .userInitiated).async {
         chapters = BooksDatabase().getAllChapterIds(from: bookName).map{$0.0}
+        if chapters.isEmpty {
+          viewContent = .reading(.bookEdit)
+        }
       }
     }
   }

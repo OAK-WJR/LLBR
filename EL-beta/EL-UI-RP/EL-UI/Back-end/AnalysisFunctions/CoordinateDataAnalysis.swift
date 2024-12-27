@@ -46,6 +46,8 @@ class DataAnalysis {
           width: max(quad.topLeft.x, quad.topRight.x, quad.bottomLeft.x, quad.bottomRight.x) - min(quad.topLeft.x, quad.topRight.x, quad.bottomLeft.x, quad.bottomRight.x),
           height: max(quad.topLeft.y, quad.topRight.y, quad.bottomLeft.y, quad.bottomRight.y) - min(quad.topLeft.y, quad.topRight.y, quad.bottomLeft.y, quad.bottomRight.y)
         )
+        print(quad)
+        print(boundingBox)
         spatialIndex.add(quadIndex: IndexPath(item: innerIndex, section: outerIndex), boundingBox: boundingBox)
       }
     }

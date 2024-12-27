@@ -237,10 +237,17 @@ class PDFGenerator {
       
       let finalLearnedFilteredWordsIndex = Set(finalUnknowWordsIndex + finalLearningWordsIndex).sorted()
       
+      var sentences: [Range<Int>: String] = [:]
+      for range in validPageContent.pointer.sentencePointer {
+        let sentenceWords = validPageContent.texts[range!].joined(separator: " ")
+        sentences[range!] = sentenceWords
+      }
+      
       let textContent = RPInfoContent(
         texts: formatedWords,
         positions: validPageContent.positions as? [[Quadrilateral]],
         indexed: indexed,
+        sentences: sentences,
         unknownWordsIndex: finalLearnedFilteredWordsIndex,
         learningWordsIndex: learningWordsIndex,
         definitions: definitions

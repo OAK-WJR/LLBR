@@ -8,6 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		34060BED2B757D7500538D89 /* ReadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34060BEC2B757D7500538D89 /* ReadingView.swift */; };
+		340751702D1CCAFF00F7EAD2 /* other-easy.exc in Resources */ = {isa = PBXBuildFile; fileRef = 3407516B2D1CCAFF00F7EAD2 /* other-easy.exc */; };
+		340751712D1CCAFF00F7EAD2 /* verb-easy.exc in Resources */ = {isa = PBXBuildFile; fileRef = 3407516C2D1CCAFF00F7EAD2 /* verb-easy.exc */; };
+		340751722D1CCAFF00F7EAD2 /* adv-easy.exc in Resources */ = {isa = PBXBuildFile; fileRef = 3407516D2D1CCAFF00F7EAD2 /* adv-easy.exc */; };
+		340751732D1CCAFF00F7EAD2 /* noun-easy.exc in Resources */ = {isa = PBXBuildFile; fileRef = 3407516E2D1CCAFF00F7EAD2 /* noun-easy.exc */; };
+		340751742D1CCAFF00F7EAD2 /* adj-easy.exc in Resources */ = {isa = PBXBuildFile; fileRef = 3407516F2D1CCAFF00F7EAD2 /* adj-easy.exc */; };
+		340751762D1E313400F7EAD2 /* LearnedWords.db in Resources */ = {isa = PBXBuildFile; fileRef = 340751752D1E313400F7EAD2 /* LearnedWords.db */; };
+		340751782D1E33D300F7EAD2 /* TranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 340751772D1E33D300F7EAD2 /* TranslationView.swift */; };
 		340AA9492BAEA446004DF5E4 /* MemoryCurveFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 340AA9202BAEA445004DF5E4 /* MemoryCurveFilter.swift */; };
 		340AA94A2BAEA446004DF5E4 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 340AA9232BAEA445004DF5E4 /* UserSettings.swift */; };
 		340AA94B2BAEA446004DF5E4 /* Dictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 340AA9242BAEA445004DF5E4 /* Dictionary.swift */; };
@@ -15,7 +22,6 @@
 		340AA94D2BAEA446004DF5E4 /* UnknowWords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 340AA9262BAEA445004DF5E4 /* UnknowWords.swift */; };
 		340AA94E2BAEA446004DF5E4 /* LearnedWords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 340AA9272BAEA445004DF5E4 /* LearnedWords.swift */; };
 		340AA94F2BAEA446004DF5E4 /* GeneralTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 340AA9282BAEA445004DF5E4 /* GeneralTools.swift */; };
-		340AA9502BAEA446004DF5E4 /* LearnedWords.db in Resources */ = {isa = PBXBuildFile; fileRef = 340AA92A2BAEA445004DF5E4 /* LearnedWords.db */; };
 		340AA9522BAEA446004DF5E4 /* UnknowWords.db in Resources */ = {isa = PBXBuildFile; fileRef = 340AA92C2BAEA445004DF5E4 /* UnknowWords.db */; };
 		340AA9532BAEA446004DF5E4 /* Dictionary.db in Resources */ = {isa = PBXBuildFile; fileRef = 340AA92D2BAEA445004DF5E4 /* Dictionary.db */; };
 		340AA9572BAEA446004DF5E4 /* UnkowWordsFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 340AA9342BAEA446004DF5E4 /* UnkowWordsFilter.swift */; };
@@ -68,6 +74,13 @@
 
 /* Begin PBXFileReference section */
 		34060BEC2B757D7500538D89 /* ReadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingView.swift; sourceTree = "<group>"; };
+		3407516B2D1CCAFF00F7EAD2 /* other-easy.exc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "other-easy.exc"; sourceTree = "<group>"; };
+		3407516C2D1CCAFF00F7EAD2 /* verb-easy.exc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "verb-easy.exc"; sourceTree = "<group>"; };
+		3407516D2D1CCAFF00F7EAD2 /* adv-easy.exc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "adv-easy.exc"; sourceTree = "<group>"; };
+		3407516E2D1CCAFF00F7EAD2 /* noun-easy.exc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "noun-easy.exc"; sourceTree = "<group>"; };
+		3407516F2D1CCAFF00F7EAD2 /* adj-easy.exc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "adj-easy.exc"; sourceTree = "<group>"; };
+		340751752D1E313400F7EAD2 /* LearnedWords.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = LearnedWords.db; sourceTree = "<group>"; };
+		340751772D1E33D300F7EAD2 /* TranslationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationView.swift; sourceTree = "<group>"; };
 		340AA9202BAEA445004DF5E4 /* MemoryCurveFilter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MemoryCurveFilter.swift; sourceTree = "<group>"; };
 		340AA9232BAEA445004DF5E4 /* UserSettings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserSettings.swift; sourceTree = "<group>"; };
 		340AA9242BAEA445004DF5E4 /* Dictionary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Dictionary.swift; sourceTree = "<group>"; };
@@ -75,7 +88,6 @@
 		340AA9262BAEA445004DF5E4 /* UnknowWords.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnknowWords.swift; sourceTree = "<group>"; };
 		340AA9272BAEA445004DF5E4 /* LearnedWords.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LearnedWords.swift; sourceTree = "<group>"; };
 		340AA9282BAEA445004DF5E4 /* GeneralTools.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneralTools.swift; sourceTree = "<group>"; };
-		340AA92A2BAEA445004DF5E4 /* LearnedWords.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = LearnedWords.db; sourceTree = "<group>"; };
 		340AA92C2BAEA445004DF5E4 /* UnknowWords.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = UnknowWords.db; sourceTree = "<group>"; };
 		340AA92D2BAEA445004DF5E4 /* Dictionary.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = Dictionary.db; sourceTree = "<group>"; };
 		340AA9342BAEA446004DF5E4 /* UnkowWordsFilter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnkowWordsFilter.swift; sourceTree = "<group>"; };
@@ -148,6 +160,30 @@
 			path = BookContentViews;
 			sourceTree = "<group>";
 		};
+		340751692D1CCA7800F7EAD2 /* all */ = {
+			isa = PBXGroup;
+			children = (
+				340AA9372BAEA446004DF5E4 /* other.exc */,
+				340AA9382BAEA446004DF5E4 /* verb.exc */,
+				340AA9392BAEA446004DF5E4 /* adj.exc */,
+				340AA93B2BAEA446004DF5E4 /* adv.exc */,
+				340AA93A2BAEA446004DF5E4 /* noun.exc */,
+			);
+			path = all;
+			sourceTree = "<group>";
+		};
+		3407516A2D1CCA9700F7EAD2 /* easy */ = {
+			isa = PBXGroup;
+			children = (
+				3407516F2D1CCAFF00F7EAD2 /* adj-easy.exc */,
+				3407516D2D1CCAFF00F7EAD2 /* adv-easy.exc */,
+				3407516E2D1CCAFF00F7EAD2 /* noun-easy.exc */,
+				3407516B2D1CCAFF00F7EAD2 /* other-easy.exc */,
+				3407516C2D1CCAFF00F7EAD2 /* verb-easy.exc */,
+			);
+			path = easy;
+			sourceTree = "<group>";
+		};
 		340AA91E2BAEA445004DF5E4 /* Back-end */ = {
 			isa = PBXGroup;
 			children = (
@@ -194,7 +230,7 @@
 		340AA9292BAEA445004DF5E4 /* DataFile */ = {
 			isa = PBXGroup;
 			children = (
-				340AA92A2BAEA445004DF5E4 /* LearnedWords.db */,
+				340751752D1E313400F7EAD2 /* LearnedWords.db */,
 				340AA92C2BAEA445004DF5E4 /* UnknowWords.db */,
 				340AA92D2BAEA445004DF5E4 /* Dictionary.db */,
 			);
@@ -227,11 +263,8 @@
 		340AA9362BAEA446004DF5E4 /* LEWords */ = {
 			isa = PBXGroup;
 			children = (
-				340AA9372BAEA446004DF5E4 /* other.exc */,
-				340AA9382BAEA446004DF5E4 /* verb.exc */,
-				340AA9392BAEA446004DF5E4 /* adj.exc */,
-				340AA93A2BAEA446004DF5E4 /* noun.exc */,
-				340AA93B2BAEA446004DF5E4 /* adv.exc */,
+				3407516A2D1CCA9700F7EAD2 /* easy */,
+				340751692D1CCA7800F7EAD2 /* all */,
 			);
 			path = LEWords;
 			sourceTree = "<group>";
@@ -347,6 +380,7 @@
 				34060BEC2B757D7500538D89 /* ReadingView.swift */,
 				341BF98F2BC4DFCE00D4BBC4 /* ScrollStyle */,
 				3413AFBC2BB6587500995D4F /* DefinitionCard.swift */,
+				340751772D1E33D300F7EAD2 /* TranslationView.swift */,
 				3425B76A2CA7516A00DAD8F3 /* CatalogView.swift */,
 			);
 			path = ReadingView;
@@ -482,19 +516,24 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				340751732D1CCAFF00F7EAD2 /* noun-easy.exc in Resources */,
 				340AA95C2BAEA446004DF5E4 /* adv.exc in Resources */,
+				340751742D1CCAFF00F7EAD2 /* adj-easy.exc in Resources */,
 				340AA9592BAEA446004DF5E4 /* verb.exc in Resources */,
 				340AA95A2BAEA446004DF5E4 /* adj.exc in Resources */,
+				340751712D1CCAFF00F7EAD2 /* verb-easy.exc in Resources */,
 				340AA9522BAEA446004DF5E4 /* UnknowWords.db in Resources */,
 				340AA9582BAEA446004DF5E4 /* other.exc in Resources */,
 				340AA95B2BAEA446004DF5E4 /* noun.exc in Resources */,
 				340F4F7E2B5F6D3100276C33 /* StarsParticles.scnp in Resources */,
+				340751702D1CCAFF00F7EAD2 /* other-easy.exc in Resources */,
+				340751722D1CCAFF00F7EAD2 /* adv-easy.exc in Resources */,
 				34252FFD2B684A1A0020E18C /* BookFrame.scn in Resources */,
 				340F4F752B5F38EB00276C33 /* Preview Assets.xcassets in Resources */,
 				340AA9532BAEA446004DF5E4 /* Dictionary.db in Resources */,
+				340751762D1E313400F7EAD2 /* LearnedWords.db in Resources */,
 				343631BE2B630107007C7F8C /* star.png in Resources */,
 				340F4F722B5F38EB00276C33 /* Assets.xcassets in Resources */,
-				340AA9502BAEA446004DF5E4 /* LearnedWords.db in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -517,6 +556,7 @@
 				340AA95D2BAEA446004DF5E4 /* Lemmatization.swift in Sources */,
 				340AA9492BAEA446004DF5E4 /* MemoryCurveFilter.swift in Sources */,
 				340AA9652BAEA446004DF5E4 /* Splitter.swift in Sources */,
+				340751782D1E33D300F7EAD2 /* TranslationView.swift in Sources */,
 				340F4F702B5F38E700276C33 /* ContentView.swift in Sources */,
 				340FBEA92BC61C13004E5DDC /* DirectionIdentify.swift in Sources */,
 				340AA95F2BAEA446004DF5E4 /* LearnedWordFilter.swift in Sources */,
