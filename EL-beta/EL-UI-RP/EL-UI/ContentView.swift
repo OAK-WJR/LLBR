@@ -16,6 +16,8 @@ struct ContentView: View {
   @State var showBookList: Bool = false
   @EnvironmentObject var userSettings: UserSettings
   
+  @EnvironmentObject var userSettings: UserSettings
+  
   var body: some View {
     if !userSettings.isAgreedPolicy {
       PrivacyConsentView()
