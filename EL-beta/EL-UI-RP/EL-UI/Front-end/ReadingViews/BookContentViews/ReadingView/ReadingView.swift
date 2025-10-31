@@ -49,12 +49,12 @@ struct ReadingView: View {
       }
     }
     .onAppear {
-      DispatchQueue.global(qos: .userInitiated).async {
-        chapters = BooksDatabase().getAllChapterIds(from: bookName).map{$0.0}
+      chapters = BooksDatabase.shared.getAllChapterIds(from: bookName).map{$0.0}
+      DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(10), execute: {
         if chapters.isEmpty {
           viewContent = .reading(.bookEdit)
         }
-      }
+      })
     }
   }
 }

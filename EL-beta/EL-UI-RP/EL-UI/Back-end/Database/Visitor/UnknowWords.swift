@@ -8,7 +8,10 @@
 import Foundation
 import SQLite3
 
+private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+
 class UnknowWordsDatabase {
+  static let shared = UnknowWordsDatabase()
   var db: OpaquePointer?
   private let dbQueue = DispatchQueue(label: "com.unknownWords.databaseQueue") // Serial queue
   
@@ -208,7 +211,7 @@ class UnknowWordsDatabase {
       let isUpdate: Bool = (bookIndex != nil && pageIndex != nil)
       var filteredWordsIndex: [Int] = []
       
-      executeStatement("BEGIN EXCLUSIVE TRANSACTION;")
+      sqlite3_exec(db, "BEGIN IMMEDIATE TRANSACTION;", nil, nil, nil)
       
       for (index, word) in words.enumerated() {
         let lowercasedWord = word.texts.lowercased()
@@ -223,7 +226,7 @@ class UnknowWordsDatabase {
         }
       }
       
-      executeStatement("END TRANSACTION;")
+      sqlite3_exec(db, "COMMIT;", nil, nil, nil)
       
       return filteredWordsIndex
     }
@@ -249,6 +252,7 @@ class UnknowWordsDatabase {
         INSERT INTO Words (word, frequency) VALUES (?, 1)
         ON CONFLICT(word) DO UPDATE SET frequency = frequency + 1, modified_time = CURRENT_TIMESTAMP;
         """
+    
     executeStatement(updateOrInsertString, word: word)
   }
   
@@ -263,16 +267,16 @@ class UnknowWordsDatabase {
     
     if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK {
       if let word = word {
-        sqlite3_bind_text(statement, 1, word, -1, nil)
+        sqlite3_bind_text(statement, 1, word, -1, SQLITE_TRANSIENT)
       }
       if let bookIndex =
           bookIndex, let index = pageIndex {
-        sqlite3_bind_text(statement, 2, bookIndex, -1, nil)
+        sqlite3_bind_text(statement, 2, bookIndex, -1, SQLITE_TRANSIENT)
         sqlite3_bind_int(statement, 3, Int32(index))
       }
       
       if sqlite3_step(statement) != SQLITE_DONE {
-        print("Error executing statement: \(sql)")
+        print("SQLite step failed: \(String(cString: sqlite3_errmsg(db))) | SQL: \(sql)")
       }
     } else {
       //print("Error preparing statement: \(sql)")

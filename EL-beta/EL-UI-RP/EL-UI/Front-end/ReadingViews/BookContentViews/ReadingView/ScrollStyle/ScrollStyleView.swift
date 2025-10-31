@@ -14,7 +14,7 @@ struct ScrollShowView: View {
   //@Binding var viewContent: ViewContent
   
   @Binding var showMenu: Bool
-  @State var showTranslation: Bool = false
+  @State var showTranslation: Bool = true
   
   @Binding var bookName: String
   @Binding var chapterNow: Int
@@ -26,6 +26,8 @@ struct ScrollShowView: View {
   @State var selectedWordIndex: Int = 0
   
   @State var pdfContent: PDFContent = PDFContent(pdf: PDFDocument(), contents: [])
+  
+  @State private var currentZoomLevel: CGFloat = 1.0
   
   //@State var pgInfoContent = RPInfoContent()
   
@@ -63,6 +65,16 @@ struct ScrollShowView: View {
     wordChoosing(selectedPageIndex: selectedWordIndex, location: percentPosition, edit: true)
   }
   
+  func handleZoomLevelChanged(zoomLevel: CGFloat) {
+    print("缩放比例变化为: \(zoomLevel)")
+    if zoomLevel <= 0.98 {
+      DispatchQueue.main.async {
+        withAnimation {
+          showMenu.toggle()
+        }
+      }
+    }
+  }
   /*
   // Convert the percentage position into actual coordinates on the page
   func convertPercentPositionToPageLocation(percentPosition: CGPoint, pageIndex: Int) -> CGPoint {
@@ -89,6 +101,16 @@ struct ScrollShowView: View {
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       .ignoresSafeArea()
+      .simultaneousGesture(
+        MagnificationGesture()
+            .onChanged { value in
+              print(value)
+                handleZoomLevelChanged(zoomLevel: value)
+            }
+          .onEnded { _ in
+            // Extra logic for the end of the gesture could go here
+          }
+      )
       
       VStack {
         if !showMenu {
@@ -193,12 +215,15 @@ class CustomPDFView: PDFKit.PDFView {
     }
   }
   
-  // Override layoutSubviews to limit scaleFactor
   override func layoutSubviews() {
     super.layoutSubviews()
+    
+    // Set the zoom range
     self.minScaleFactor = self.scaleFactorForSizeToFit
-    self.maxScaleFactor = 2.0 // You can adjust the maximum zoom as needed
-    self.scaleFactor = max(self.scaleFactor, self.minScaleFactor)
+    self.maxScaleFactor = 2.0 // Set the maximum zoom
+    
+    // Keep the current zoom within the allowed range
+    self.scaleFactor = max(self.minScaleFactor, min(self.scaleFactor, self.maxScaleFactor))
   }
   
   deinit {

@@ -38,7 +38,7 @@ class PDFGenerator {
   var processingPages = Set<Int>()
   let processingQueue = DispatchQueue(label: "com.pdfgenerator.processingQueue")
   
-  let booksDB = BooksDatabase()
+  let booksDB = BooksDatabase.shared
   let dictionaryDB = DictionaryDatabase()
   let unknowWordsDB = UnknowWordsDatabase()
   let learnedWordsDB = LearedWordsDatabase()
@@ -117,12 +117,12 @@ class PDFGenerator {
   }
   
   //  func loadRemainingPages(bookName: String, chapter: Int, startingIndex: Int) {
-  //    let ids = BooksDatabase().getAllIds(from: bookName, chapterId: chapter)
+  //    let ids = BooksDatabase.shared.getAllIds(from: bookName, chapterId: chapter)
   //    let remainingPageIds = Array(ids.dropFirst(startingIndex))
   //
   //    // Fetch the original images of all remaining pages in one batch
   //    DispatchQueue.global(qos: .background).async {
-  //      let originalImages = BooksDatabase().getOriginal(at: remainingPageIds, from: bookName).compactMap { $0.original }
+  //      let originalImages = BooksDatabase.shared.getOriginal(at: remainingPageIds, from: bookName).compactMap { $0.original }
   //
   //      // Insert each image into a PDF page in turn
   //      DispatchQueue.main.async {
@@ -168,106 +168,109 @@ class PDFGenerator {
     operation = BlockOperation { [weak self] in
       guard let self = self else { return }
       
-      // Check whether the task was cancelled
-      if operation?.isCancelled == true {
+      Task { [weak self, weak operation] in
+        guard let self = self else { return }
+        
+        // Check whether the task was cancelled
+        if operation?.isCancelled == true {
+          self.processingQueue.sync {
+            self.processingPages.remove(id)
+          }
+          return
+        }
+        
+        // Get or process the page content
+        var pageContent = booksDB.getContent(at: [id], from: self.bookName).first!
+        if pageContent == nil {
+          pageContent = UniformFormat().classifyAndProcess(content: baseImage)
+          if let content = pageContent {
+            booksDB.addContent(at: id, content: content, to: self.bookName)
+          }
+        }
+        guard let validPageContent = pageContent else {
+          DispatchQueue.main.async {
+            completion()
+          }
+          return
+        }
+        
+        // Get the words, unknown word indexes and definitions
+        let (formatedWords, unknowWordsIndex, definitions) = await TextFilter().textFilter(from: validPageContent)
+        
+        // Build the index dictionary
+        var indexed: [String: [Int]] = [:]
+        for (index, word) in formatedWords.enumerated() {
+          indexed[word.texts.lowercased(), default: []].append(index)
+        }
+        
+        // Process unknown words
+        var finalUnknowWordsIndex = [Int]()
+        var unknowWords = [String]()
+        for index in unknowWordsIndex {
+          let word = formatedWords[index].texts
+          if definitions[word.lowercased()]?.definitions != nil && !unknowWords.contains(word.lowercased()) {
+            finalUnknowWordsIndex.append(index)
+            unknowWords.append(word.lowercased())
+          }
+        }
+        
+        // Add new words to the learning word list
+        var newLearningWords: [String] = []
+        for index in finalUnknowWordsIndex {
+          let word = formatedWords[index].texts
+          if word.first!.isLowercase {
+            newLearningWords.append(word)
+          }
+        }
+        
+        unknowWordsDB.add(words: newLearningWords, bookIndex: self.bookName, pageIndex: id)
+        
+        // Get the learning word indexes
+        let learningWordsIndex = UnkowWordsFilter().filter(originalWords: formatedWords, bookIndex: self.bookName, pageIndex: id)
+        
+        var finalLearningWordsIndex = [Int]()
+        var learningWords = [String]()
+        for index in learningWordsIndex {
+          let word = formatedWords[index].texts
+          if !learningWords.contains(word.lowercased()) {
+            finalLearningWordsIndex.append(index)
+            learningWords.append(word.lowercased())
+          }
+        }
+        
+        let finalLearnedFilteredWordsIndex = Set(finalUnknowWordsIndex + finalLearningWordsIndex).sorted()
+        
+        var sentences: [Range<Int>: String] = [:]
+        for range in validPageContent.pointer.sentencePointer {
+          let sentenceWords = validPageContent.texts[range!].joined(separator: " ")
+          sentences[range!] = sentenceWords
+        }
+        
+        let textContent = RPInfoContent(
+          texts: formatedWords,
+          positions: validPageContent.positions as? [[Quadrilateral]],
+          indexed: indexed,
+          sentences: sentences,
+          unknownWordsIndex: finalLearnedFilteredWordsIndex,
+          learningWordsIndex: learningWordsIndex,
+          definitions: definitions
+        )
+        
+        // Call this method directly in `loadInformation` to add annotations
+        DispatchQueue.main.async {
+          // Call the annotation function instead of creating a new PDFPage
+          PDFProcessing().addHighlightedQuadrilateralsToPDF(pdfDocument: self.pdfContent.pdf, pageInformation: textContent, pageIndex: pageIndex)
+          self.pdfContent.contents[pageIndex].imageType = .mark
+          self.pdfContent.contents[pageIndex].textContent = textContent
+          NotificationCenter.default.post(name: .didAddNewPDFPage, object: nil)
+          completion()
+        }
+        
+        // Remove from the in-progress set once the work is done
         self.processingQueue.sync {
           self.processingPages.remove(id)
         }
-        return
       }
-      
-      // Get or process the page content
-      var pageContent = booksDB.getContent(at: [id], from: self.bookName).first!
-      if pageContent == nil {
-        pageContent = UniformFormat().classifyAndProcess(content: baseImage)
-        if let content = pageContent {
-          booksDB.addContent(at: id, content: content, to: self.bookName)
-        }
-      }
-      guard let validPageContent = pageContent else {
-        DispatchQueue.main.async {
-          completion()
-        }
-        return
-      }
-      
-      // Get the words, unknown word indexes and definitions
-      let (formatedWords, unknowWordsIndex, definitions) = TextFilter().textFilter(from: validPageContent)
-      
-      // Build the index dictionary
-      var indexed: [String: [Int]] = [:]
-      for (index, word) in formatedWords.enumerated() {
-        indexed[word.texts.lowercased(), default: []].append(index)
-      }
-      
-      // Process unknown words
-      var finalUnknowWordsIndex = [Int]()
-      var unknowWords = [String]()
-      for index in unknowWordsIndex {
-        let word = formatedWords[index].texts
-        if definitions[word.lowercased()]?.definitions != nil && !unknowWords.contains(word.lowercased()) {
-          finalUnknowWordsIndex.append(index)
-          unknowWords.append(word.lowercased())
-        }
-      }
-      
-      // Add new words to the learning word list
-      var newLearningWords: [String] = []
-      for index in finalUnknowWordsIndex {
-        let word = formatedWords[index].texts
-        if word.first!.isLowercase {
-          newLearningWords.append(word)
-        }
-      }
-      
-      unknowWordsDB.add(words: newLearningWords, bookIndex: self.bookName, pageIndex: id)
-      
-      // Get the learning word indexes
-      let learningWordsIndex = UnkowWordsFilter().filter(originalWords: formatedWords, bookIndex: self.bookName, pageIndex: id)
-      
-      var finalLearningWordsIndex = [Int]()
-      var learningWords = [String]()
-      for index in learningWordsIndex {
-        let word = formatedWords[index].texts
-        if !learningWords.contains(word.lowercased()) {
-          finalLearningWordsIndex.append(index)
-          learningWords.append(word.lowercased())
-        }
-      }
-      
-      let finalLearnedFilteredWordsIndex = Set(finalUnknowWordsIndex + finalLearningWordsIndex).sorted()
-      
-      var sentences: [Range<Int>: String] = [:]
-      for range in validPageContent.pointer.sentencePointer {
-        let sentenceWords = validPageContent.texts[range!].joined(separator: " ")
-        sentences[range!] = sentenceWords
-      }
-      
-      let textContent = RPInfoContent(
-        texts: formatedWords,
-        positions: validPageContent.positions as? [[Quadrilateral]],
-        indexed: indexed,
-        sentences: sentences,
-        unknownWordsIndex: finalLearnedFilteredWordsIndex,
-        learningWordsIndex: learningWordsIndex,
-        definitions: definitions
-      )
-      
-      // Call this method directly in `loadInformation` to add annotations
-      DispatchQueue.main.async {
-        // Call the annotation function instead of creating a new PDFPage
-        PDFProcessing().addHighlightedQuadrilateralsToPDF(pdfDocument: self.pdfContent.pdf, pageInformation: textContent, pageIndex: pageIndex)
-        self.pdfContent.contents[pageIndex].imageType = .mark
-        self.pdfContent.contents[pageIndex].textContent = textContent
-        NotificationCenter.default.post(name: .didAddNewPDFPage, object: nil)
-        completion()
-      }
-      
-      // Remove from the in-progress set once the work is done
-      self.processingQueue.sync {
-        self.processingPages.remove(id)
-      }
-      
     }
     
     operation?.queuePriority = priority
@@ -302,7 +305,7 @@ class RP_ContentLoader: ObservableObject {
   func loadInitialContent(completion: @escaping (Bool) -> Void) {
     isLoading = true
     // Fetch all page IDs from the book
-    ids = BooksDatabase().getAllIds(from: bookName, chapterId: 0)
+    ids = BooksDatabase.shared.getAllIds(from: bookName, chapterId: 0)
     print(ids)
     
     // Load the initial batch of content based on maxContentCount
@@ -368,7 +371,7 @@ class RP_ContentLoader: ObservableObject {
   // Function to load view content for the specified IDs and handle the completion
   func singleDirectionLoadViewContent(for loadImagesIds: [Int], direction: DataLoadDirection, completion: @escaping () -> Void) {
     // Fetch the original images from the database for the specified IDs
-    let newImages: [UIImage?] = BooksDatabase().getOriginal(at: loadImagesIds, from: bookName).map{$0.original}
+    let newImages: [UIImage?] = BooksDatabase.shared.getOriginal(at: loadImagesIds, from: bookName).map{$0.original}
     let newContents: [RPContent] = loadImagesIds.enumerated().map { (index, id) in
       RPContent(id: id, viewContent: RPViewContent(imageType: .clear, originalImage: newImages[index], showImage: newImages[index]!))
     }
@@ -391,7 +394,7 @@ class RP_ContentLoader: ObservableObject {
     let endIdIndex = min(self.ids.count, id + halfRange)
     let loadImagesIds: [Int] = Array(self.ids[startIdIndex..<endIdIndex])
     // Load images for the calculated range of IDs
-    let images: [UIImage?] = BooksDatabase().getOriginal(at: loadImagesIds, from: bookName).map{$0.original}
+    let images: [UIImage?] = BooksDatabase.shared.getOriginal(at: loadImagesIds, from: bookName).map{$0.original}
     self.contents = loadImagesIds.enumerated().map { (index, id) in
       RPContent(id: id, viewContent: RPViewContent(imageType: .clear, originalImage: images[index], showImage: images[index]!))
     }
@@ -411,11 +414,11 @@ class RP_ContentLoader: ObservableObject {
              let image = self.contents[index].viewContent?.showImage {
             
             //get book content
-            var pageContent = BooksDatabase().getContent(at: [id], from: self.bookName)[0]
+            var pageContent = BooksDatabase.shared.getContent(at: [id], from: self.bookName)[0]
             //if no content, then recognize the image
             if pageContent == nil {
               pageContent = UniformFormat().classifyAndProcess(content: image)!
-              BooksDatabase().addContent(at: id, content: pageContent!, to: self.bookName)
+              BooksDatabase.shared.addContent(at: id, content: pageContent!, to: self.bookName)
             }
             
             //get (words, learnedWords, definitions)

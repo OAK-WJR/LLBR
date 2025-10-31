@@ -263,7 +263,7 @@ struct ResourceEditView: View {
               for loadIds in chunks {
                 EditResourceDatabase().fetchImages(ids: loadIds) { images in
                   print("0")
-                  BooksDatabase().addOriginal(originals: images, to: bookName, chapterId: 0)
+                  BooksDatabase.shared.addOriginal(originals: images, to: bookName, chapterId: 0)
                   print("0")
                 }
               }

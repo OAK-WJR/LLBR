@@ -54,14 +54,7 @@ class LearedWordsDatabase {
         freqDataBase = "COCA_Freq"
       }
       
-      switch userEnglishLevel.vocabularyLevel {
-      case .beginner:
-        levelNum = 1000
-      case .intermediate:
-        levelNum = 3999
-      case .advanced:
-        levelNum = 6999
-      }
+      levelNum = userEnglishLevel.vocabularyLevel.wordCount
     }
     let queryStatementString = "INSERT OR IGNORE INTO UserLearned (word, POS) SELECT word, POS FROM \(freqDataBase) WHERE id <= \(levelNum);"
     var queryStatement: OpaquePointer?

@@ -18,10 +18,11 @@ enum ElementType {
 }
 
 // Database manager class
-class BooksDatabase {
+final class BooksDatabase {
   // Database connection pointer
   var db: OpaquePointer?
   let databaseQueue = DispatchQueue(label: "com.books.databaseQueue")
+  static let shared = BooksDatabase()
   
   // Initialize the database connection
   init() {
@@ -33,21 +34,21 @@ class BooksDatabase {
         print("Need to create 'dairy' database")
         self.createTable(named: "dairy")
         
-//        var images: [UIImage] = []
-//        for i in 0...99 {
-//          guard let path = Bundle.main.path(forResource: String(i), ofType: "jpg") else { continue }
-//          if let image = UIImage(contentsOfFile: path) {
-//            images.append(image)
-//          }
-//        }
-//        print(images.count)
+        var images: [CroppingImage] = []
+        for i in 1...3 {
+          guard let path = Bundle.main.path(forResource: String(i), ofType: "jpg") else { continue }
+          if let image = UIImage(contentsOfFile: path) {
+            images.append(CroppingImage(id: 0, image: image))
+          }
+        }
+        print(images.count)
         
-//        if !images.isEmpty {
-//          self.addOriginal(originals: images, to: "dairy", chapterId: 0)
-//          print("Successfully loaded images into the 'dairy' table.")
-//        } else {
-//          print("No images found to load into the 'dairy' table.")
-//        }
+        if !images.isEmpty {
+          self.addOriginal(originals: images, to: "dairy", chapterId: 0)
+          print("Successfully loaded images into the 'dairy' table.")
+        } else {
+          print("No images found to load into the 'dairy' table.")
+        }
       }
     }
   }
@@ -56,7 +57,8 @@ class BooksDatabase {
   //MARK: - Top-level functions - Initialization
   
   func openDatabase() {
-    let fileURL = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+    let fileURL = try! FileManager.default
+      .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
       .appendingPathComponent("Books.db")
     
     databaseQueue.sync {
@@ -64,30 +66,37 @@ class BooksDatabase {
         print("Error opening database")
       } else {
         print("Successfully opened connection to database")
+        // Set a busy timeout so a brief lock does not fail right away
+        sqlite3_busy_timeout(db, 5000)
+        // Switch to WAL mode so reads and writes are less likely to block each other
+        var stmt: OpaquePointer?
+        if sqlite3_prepare_v2(db, "PRAGMA journal_mode=WAL;", -1, &stmt, nil) == SQLITE_OK {
+          _ = sqlite3_step(stmt)
+        }
+        sqlite3_finalize(stmt)
       }
     }
   }
 
   func createIndexTableIfNeeded() {
     let createTableString = """
-    CREATE TABLE IF NOT EXISTS IndexTable(
-        name TEXT PRIMARY KEY NOT NULL,
-        coverImage BLOB,
-        addTime DATETIME DEFAULT CURRENT_TIMESTAMP,
-        finalChangeTime DATETIME,
-        pageNumber INTEGER
-    );
-    """
-
-    var createTableStatement: OpaquePointer?
-    if sqlite3_prepare_v2(db, createTableString, -1, &createTableStatement, nil) == SQLITE_OK {
-      if sqlite3_step(createTableStatement) != SQLITE_DONE {
-        print("Diary table could not be created.")
+      CREATE TABLE IF NOT EXISTS IndexTable(
+          name TEXT PRIMARY KEY NOT NULL,
+          coverImage BLOB,
+          addTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+          finalChangeTime DATETIME,
+          pageNumber INTEGER
+      );
+      """
+    var stmt: OpaquePointer?
+    if sqlite3_prepare_v2(db, createTableString, -1, &stmt, nil) == SQLITE_OK {
+      if sqlite3_step(stmt) != SQLITE_DONE {
+        print("IndexTable could not be created.")    // Don't write "Diary" here anymore
       }
     } else {
-      print("CREATE TABLE statement could not be prepared.")
+      print("CREATE TABLE IndexTable could not be prepared.")
     }
-    sqlite3_finalize(createTableStatement)
+    sqlite3_finalize(stmt)
   }
 
   // MARK: - Top-level functions - General operations

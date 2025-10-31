@@ -1,0 +1,9 @@
+# Ignore the subproject's Pods
+EL-UI-RP/Pods/
+
+# DerivedData, Xcode caches, etc. can also be ignored
+DerivedData/
+build/
+xcuserdata/
+*.xcuserstate
+.DS_Store

@@ -16,29 +16,33 @@ class UserSettings: ObservableObject {
   // Define the storage keys
   private let isAgreedPolicyKey = "isAgreedPolicy"
   private let userEnglishLevelKey = "userEnglishLevel"
+  private let backgroundKey = "userBackground"
   
   private init() {
-      self.isAgreedPolicy = userDefaults.bool(forKey: isAgreedPolicyKey)
-      if let data = userDefaults.data(forKey: userEnglishLevelKey) {
-          do {
-              self.userEnglishLevel = try JSONDecoder().decode(UserEnglishLevel.self, from: data)
-              print("UserEnglishLevel loaded successfully:", self.userEnglishLevel ?? "nil")
-          } catch {
-              print("Failed to decode UserEnglishLevel:", error)
-              self.userEnglishLevel = nil
-          }
-      } else {
-          self.userEnglishLevel = nil
-          print("No UserEnglishLevel data found")
+    self.isAgreedPolicy = userDefaults.bool(forKey: isAgreedPolicyKey)
+    if let data = userDefaults.data(forKey: userEnglishLevelKey) {
+      do {
+        let decodedLevel = try JSONDecoder().decode(UserEnglishLevel.self, from: data)
+        self.userEnglishLevel = decodedLevel
+        print("UserEnglishLevel loaded successfully:", decodedLevel)
+      } catch {
+        print("Failed to decode UserEnglishLevel:", error)
+        self.userEnglishLevel = nil
       }
+    } else {
+      self.userEnglishLevel = nil
+      print("No UserEnglishLevel data found")
+    }
+    // Read background (defaults to an empty string)
+    self.background = userDefaults.string(forKey: backgroundKey) ?? ""
   }
   
   // Whether the policy was accepted (updates views)
   @Published var isAgreedPolicy: Bool {
     didSet {
-      objectWillChange.send() // Notify SwiftUI to update
+      //objectWillChange.send() // Notify SwiftUI to update
       userDefaults.set(isAgreedPolicy, forKey: isAgreedPolicyKey)
-      print("isAgreedPolicy:", userDefaults.bool(forKey: "isAgreedPolicy"))
+      print("isAgreedPolicy:", userDefaults.bool(forKey: isAgreedPolicyKey))
     }
   }
   
@@ -59,6 +63,11 @@ class UserSettings: ObservableObject {
       }
     }
   }
+  @Published var background: String {
+    didSet {
+      userDefaults.set(background, forKey: backgroundKey)
+    }
+  }
 }
 
 struct UserEnglishLevel: Codable {
@@ -75,4 +84,24 @@ enum VocabularyLevel: String, Codable {
   case beginner
   case intermediate
   case advanced
+  
+  /// The matching vocabulary size
+  var wordCount: Int {
+    switch self {
+    case .beginner:
+      return 1000
+    case .intermediate:
+      return 3999
+    case .advanced:
+      return 5999
+    }
+  }
+}
+
+extension UserSettings {
+  var backgroundSummary: String {
+    guard let level = userEnglishLevel else { return "未设置" }
+    print("英语学习经历:\(background)。\(level.learningSystem.rawValue)教材,词汇量大概\(level.vocabularyLevel.wordCount)")
+    return "英语学习经历:\(background)。\(level.learningSystem.rawValue)教材,词汇量大概\(level.vocabularyLevel.wordCount)"
+  }
 }
