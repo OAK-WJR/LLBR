@@ -22,7 +22,7 @@ struct PrivacyConsentView: View {
       
       Button(action: {
         // Open the external privacy policy link
-        if let url = URL(string: "https://privacy.1ts.fun/product/240923uUxVFGe8SBicrg") {
+        if let url = URL(string: "https://oak-wjr.github.io/LLBR/privacy/") {
           UIApplication.shared.open(url)
         }
       }) {
