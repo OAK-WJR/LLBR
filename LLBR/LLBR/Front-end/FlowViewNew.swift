@@ -50,6 +50,8 @@ struct FlowViewNew: View {
           .frame(maxWidth: .infinity, maxHeight: .infinity)
       }
     }
+    // The Beta 1.0 screens are drawn for a dark background.
+    .preferredColorScheme(.dark)
   }
 
   /// The current page, with the side panel sliding in from the trailing edge.
