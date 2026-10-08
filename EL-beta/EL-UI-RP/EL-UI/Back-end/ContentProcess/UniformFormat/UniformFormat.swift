@@ -41,6 +41,7 @@ class UniformFormat {
       
     } else {
       // Unknown content type
+      print("UniformFormat.classifyAndProcess未知内容类型")
       return nil
     }
   }

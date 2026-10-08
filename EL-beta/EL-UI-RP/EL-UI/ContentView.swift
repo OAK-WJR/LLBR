@@ -8,7 +8,7 @@ import SwiftUI
 
 struct ContentView: View {
   @State var content: ViewContent = .reading(.booksList)
-  @State var showMainContentView: Bool = true
+  @State var showMainContentView: Bool = false
   
   @State var bookName: String = "dairy"
   @State var chapterNow: Int = 0

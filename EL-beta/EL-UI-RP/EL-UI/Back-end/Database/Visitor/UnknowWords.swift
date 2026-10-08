@@ -16,30 +16,34 @@ class UnknowWordsDatabase {
   private let dbQueue = DispatchQueue(label: "com.unknownWords.databaseQueue") // Serial queue
   
   init() {
-    dbQueue.sync {
-      openDatabase()
-      createTablesIfNeeded()
-    }
+    openDatabase()
+    createTablesIfNeeded()
   }
   
   func openDatabase() {
     let fileManager = FileManager.default
     let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
     let finalDatabaseURL = documentsURL.appendingPathComponent("UnknowWords.db")
-    
+
     if !fileManager.fileExists(atPath: finalDatabaseURL.path) {
-      let bundleDatabaseURL = Bundle.main.url(forResource: "UnknowWords", withExtension: "db")!
-      do {
-        try fileManager.copyItem(at: bundleDatabaseURL, to: finalDatabaseURL)
-      } catch {
-        print("Could not copy database from bundle to document directory: \(error)")
-        return
+      if let bundleDatabaseURL = Bundle.main.url(forResource: "UnknowWords", withExtension: "db") {
+        try? fileManager.copyItem(at: bundleDatabaseURL, to: finalDatabaseURL)
       }
     }
-    
-    if sqlite3_open(finalDatabaseURL.path, &db) != SQLITE_OK {
+
+    // FULLMUTEX gives a single connection its own internal mutex too (to be safe)
+    if sqlite3_open_v2(finalDatabaseURL.path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) != SQLITE_OK {
       print("Error opening database")
+      return
     }
+
+    // Busy timeout (milliseconds)
+    sqlite3_busy_timeout(db, 5000)
+
+    // Switch to WAL
+    var stmt: OpaquePointer?
+    if sqlite3_prepare_v2(db, "PRAGMA journal_mode=WAL;", -1, &stmt, nil) == SQLITE_OK { _ = sqlite3_step(stmt) }
+    sqlite3_finalize(stmt)
   }
   
   func createTablesIfNeeded() {
@@ -66,7 +70,8 @@ class UnknowWordsDatabase {
           bookIndex TEXT NOT NULL,
           pageIndex INTEGER NOT NULL,
           occurrence_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (word) REFERENCES Words(word)
+          FOREIGN KEY (word) REFERENCES Words(word),
+          UNIQUE(word, bookIndex, pageIndex)
       );
       """
     
@@ -76,17 +81,19 @@ class UnknowWordsDatabase {
   }
 
   private func createTable(createTableString: String) {
-    var createTableStatement: OpaquePointer? = nil
-    if sqlite3_prepare_v2(db, createTableString, -1, &createTableStatement, nil) == SQLITE_OK {
-      if sqlite3_step(createTableStatement) == SQLITE_DONE {
-        //        print("Table created successfully.")
+    dbQueue.sync {
+      var createTableStatement: OpaquePointer? = nil
+      if sqlite3_prepare_v2(db, createTableString, -1, &createTableStatement, nil) == SQLITE_OK {
+        if sqlite3_step(createTableStatement) == SQLITE_DONE {
+          //        print("Table created successfully.")
+        } else {
+          print("Table could not be created.")
+        }
       } else {
-        print("Table could not be created.")
+        print("UnknowWordsDatabase CREATE TABLE statement could not be prepared.")
       }
-    } else {
-      print("UnknowWordsDatabase CREATE TABLE statement could not be prepared.")
+      defer { sqlite3_finalize(createTableStatement) }
     }
-    defer { sqlite3_finalize(createTableStatement) }
   }
   
   func add(words: [String], bookIndex: String, pageIndex: Int) {
@@ -99,7 +106,13 @@ class UnknowWordsDatabase {
       let insertWordOccurrencesStatementString = "INSERT OR IGNORE INTO WordOccurrences (word, bookIndex, pageIndex) VALUES (?, ?, ?);"
       
       // Begin the transaction
-      sqlite3_exec(db, "BEGIN EXCLUSIVE TRANSACTION;", nil, nil, nil)
+      sqlite3_exec(db, "BEGIN IMMEDIATE TRANSACTION;", nil, nil, nil)
+      defer {
+        if sqlite3_exec(db, "COMMIT;", nil, nil, nil) != SQLITE_OK {
+          _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
+        }
+      }
+      
       defer { sqlite3_exec(db, "END TRANSACTION;", nil, nil, nil) }
       
       var filterStatement: OpaquePointer?
@@ -284,23 +297,25 @@ class UnknowWordsDatabase {
   }
   
   func showAllWords() -> [String] {
-    var words: [String] = []
-    
-    let queryStatementString = "SELECT word FROM FilterWords;"
-    var queryStatement: OpaquePointer?
-    
-    if sqlite3_prepare_v2(db, queryStatementString, -1, &queryStatement, nil) == SQLITE_OK {
-      while sqlite3_step(queryStatement) == SQLITE_ROW {
-        let word = String(cString: sqlite3_column_text(queryStatement, 0))
-        words.append(word)
+    return dbQueue.sync {
+      var words: [String] = []
+      
+      let queryStatementString = "SELECT word FROM FilterWords;"
+      var queryStatement: OpaquePointer?
+      
+      if sqlite3_prepare_v2(db, queryStatementString, -1, &queryStatement, nil) == SQLITE_OK {
+        while sqlite3_step(queryStatement) == SQLITE_ROW {
+          let word = String(cString: sqlite3_column_text(queryStatement, 0))
+          words.append(word)
+        }
+      } else {
+        print("UnknowWordsDatabase SELECT statement could not be prepared")
       }
-    } else {
-      print("UnknowWordsDatabase SELECT statement could not be prepared")
+      
+      defer { sqlite3_finalize(queryStatement) }
+      
+      return words
     }
-    
-    defer { sqlite3_finalize(queryStatement) }
-    
-    return words
   }
   
   private func executeInsertStatement(_ sql: String, word: String, bookIndex: String? = nil, pageIndex: Int? = nil) {

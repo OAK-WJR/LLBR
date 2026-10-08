@@ -27,7 +27,7 @@ class PDFGenerator {
   var bookName: String = ""
   var chapter: Int = 0 // Add the chapter property
   
-  private let maxTaskCount = 2
+  private let maxTaskCount = 3
   
   private let operationQueue: OperationQueue = {
     let queue = OperationQueue()
@@ -38,7 +38,7 @@ class PDFGenerator {
   var processingPages = Set<Int>()
   let processingQueue = DispatchQueue(label: "com.pdfgenerator.processingQueue")
   
-  let booksDB = BooksDatabase.shared
+  let booksDB = BooksDatabase()
   let dictionaryDB = DictionaryDatabase()
   let unknowWordsDB = UnknowWordsDatabase()
   let learnedWordsDB = LearedWordsDatabase()
@@ -53,6 +53,7 @@ class PDFGenerator {
     return pdfContent
   }
   
+  /*
   private func addPages(pdfContent: PDFContent, ids: [Int], bookName: String) {
     for (index, id) in ids.enumerated() {
       // Check whether the page already exists
@@ -66,6 +67,31 @@ class PDFGenerator {
           pdfContent.pdf.insert(pdfPage, at: insertIndex)
           let pageContent = PDFPageContent(id: id, imageType: .clear, textContent: nil)
           self.pdfContent.contents.insert(pageContent, at: insertIndex)
+        }
+      }
+    }
+    currentPageIndex += ids.count
+  }
+   */
+  private func addPages(pdfContent: PDFContent, ids: [Int], bookName: String) {
+    for (index, id) in ids.enumerated() {
+      // Check if page already exists
+      if pdfContent.contents.contains(where: { $0.id == id }) {
+        continue
+      }
+      
+      if let image = booksDB.getOriginal(at: [id], from: bookName).first?.original {
+        if let pdfPage = PDFPage(image: image) {
+          let insertIndex = min(index + currentPageIndex, pdfContent.pdf.pageCount)
+          pdfContent.pdf.insert(pdfPage, at: insertIndex)
+          let pageContent = PDFPageContent(id: id, imageType: .clear, textContent: nil)
+          
+          // Safely insert into contents array
+          if insertIndex <= self.pdfContent.contents.count {
+            self.pdfContent.contents.insert(pageContent, at: insertIndex)
+          } else {
+            self.pdfContent.contents.append(pageContent)
+          }
         }
       }
     }

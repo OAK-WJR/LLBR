@@ -68,6 +68,7 @@ struct WordsShowingView: View {
       .onChange(of: selectedWordIndex) {
         if let sentences = pdfContents.contents[selectedPageIndex].textContent?.sentences {
           if let originalSentence = findSentence(in: sentences, for: selectedWordIndex) {
+            /*
             translate(originalSentence) { translatedText in
               if let translatedText = translatedText {
                 sentenceTranslation = translatedText
@@ -76,6 +77,7 @@ struct WordsShowingView: View {
                 print("Translation failed.")
               }
             }
+             */
           }
         }
       }
